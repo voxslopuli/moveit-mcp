@@ -20,6 +20,7 @@ const EXPECTED_TOOLS = [
   'moveit_get_custom_script',
   'moveit_list_date_lists',
   'moveit_get_date_list',
+  'moveit_get_info',
   'moveit_list_pgp_keys',
   'moveit_get_pgp_key',
   'moveit_list_ssh_keys',

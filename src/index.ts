@@ -9,6 +9,7 @@ import { registerMoveitCustomScripts } from './tools/customscripts.js';
 import { registerMoveitDateLists } from './tools/datelists.js';
 import { registerMoveitGlobalParameters } from './tools/globalparameters.js';
 import { registerMoveitHosts } from './tools/hosts.js';
+import { registerMoveitInfo } from './tools/info.js';
 import { registerMoveitPgpKeys } from './tools/pgpkeys.js';
 import { registerMoveitReports } from './tools/reports.js';
 import { registerMoveitSshKeys } from './tools/sshkeys.js';
@@ -31,6 +32,7 @@ export function createServer(cfg: Config): MoveitMcpServer {
   });
 
   registerMoveitHosts(server, client);
+  registerMoveitInfo(server, client);
   registerMoveitTaskGroups(server, client);
   registerMoveitGlobalParameters(server, client);
   registerMoveitCustomScripts(server, client);
