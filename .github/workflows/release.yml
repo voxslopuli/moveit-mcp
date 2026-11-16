@@ -417,15 +417,15 @@ jobs:
           RUNNER_NPM="$(npm --version)"
           echo "Runner npm: ${RUNNER_NPM}"
 
-          PNPM_NPM="$(pnpm dlx npm@11.6.2 --version)"
-          echo "pnpm-managed npm: ${PNPM_NPM}"
+          NPMX_NPM="$(npx -y npm@11.6.2 --version)"
+          echo "npx-managed npm: ${NPMX_NPM}"
 
-          if ! version_is_supported "${PNPM_NPM}"; then
-            echo "❌ pnpm-managed npm ${PNPM_NPM} does not meet trusted publishing minimum (>=11.5.1)."
+          if ! version_is_supported "${NPMX_NPM}"; then
+            echo "❌ npx-managed npm ${NPMX_NPM} does not meet trusted publishing minimum (>=11.5.1)."
             exit 1
           fi
 
-          echo "✅ Using pnpm dlx npm@11.6.2 for publish"
+          echo "✅ Using npx -y npm@11.6.2 for publish"
 
       - name: Pack npm tarball
         run: npm pack --pack-destination .
@@ -462,7 +462,7 @@ jobs:
             local dist_tag="$1"
 
             set +e
-            pnpm dlx npm@11.6.2 publish --access public --tag="${dist_tag}" --provenance
+            npx -y npm@11.6.2 publish --access public --tag="${dist_tag}" --provenance
             local publish_exit=$?
             set -e
 
