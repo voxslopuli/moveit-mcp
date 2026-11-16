@@ -44,13 +44,14 @@ npm run build
 
 All configuration is via environment variables (see `.env.example`):
 
-| Variable                         | Required | Default | Description                                                                                                                                                                             |
-| -------------------------------- | -------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `MOVEIT_BASE_URL`                | yes      | —       | Server root **without** `/api/v1` — e.g. `https://moveit.example.com` (API at host root) or `https://host/webadmin` (Web Admin-served). A trailing `/api/v1` is tolerated and stripped. |
-| `MOVEIT_USERNAME`                | yes      | —       | MOVEit account username                                                                                                                                                                 |
-| `MOVEIT_PASSWORD`                | yes      | —       | MOVEit account password                                                                                                                                                                 |
-| `MOVEIT_SERVER_HOST`             | no       | —       | Server hostname sent in the token request when different from the base URL host                                                                                                         |
-| `MOVEIT_TLS_REJECT_UNAUTHORIZED` | no       | `true`  | Set `"false"` to accept self-signed certificates                                                                                                                                        |
+| Variable                         | Required | Default | Description                                                                                                                                                                                                                               |
+| -------------------------------- | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MOVEIT_BASE_URL`                | yes      | —       | Server root **without** `/api/v1` — e.g. `https://moveit.example.com` (API at host root) or `https://host/webadmin` (Web Admin-served). A trailing `/api/v1` is tolerated and stripped.                                                   |
+| `MOVEIT_USERNAME`                | yes      | —       | MOVEit account username                                                                                                                                                                                                                   |
+| `MOVEIT_PASSWORD`                | yes      | —       | MOVEit account password                                                                                                                                                                                                                   |
+| `MOVEIT_SERVER_HOST`             | no       | —       | Server hostname sent in the token request when different from the base URL host                                                                                                                                                           |
+| `MOVEIT_TLS_REJECT_UNAUTHORIZED` | no       | `true`  | Set `"false"` to accept self-signed certificates                                                                                                                                                                                          |
+| `MOVEIT_CA_FILE`                 | no       | —       | Path to a PEM CA bundle file for custom/enterprise CAs. **Keeps TLS verification strict** — use this for leaf-only chains or API-gateway deployments instead of disabling verification. Alternative when spawning: `NODE_EXTRA_CA_CERTS`. |
 
 Missing required variables fail startup with a list of what is missing.
 
@@ -61,6 +62,8 @@ Missing required variables fail startup with a list of what is missing.
 - Token lifecycle: ~15 min access token, ~30 min refresh token; refresh is automatic.
 - Tokens are revoked on `SIGINT`/`SIGTERM` shutdown.
 - Set `MOVEIT_TLS_REJECT_UNAUTHORIZED=false` only for self-signed certificates in non-production environments.
+- Set `MOVEIT_CA_FILE` to a PEM bundle for custom CA chains — verification stays strict.
+- Error messages from the server have RFC 1918 private IP addresses (10.x, 172.16–31.x, 192.168.x) replaced with `[redacted-ip]` so server-internal topology is not exposed; public IP addresses are preserved.
 
 ## Client setup
 
@@ -346,6 +349,7 @@ Task groups are a deprecated MOVEit Automation concept; kept for older servers.
 - **Missing environment variables** — startup fails with a list naming exactly which required variables are missing.
 - **401 loops** — usually wrong credentials, or `MOVEIT_BASE_URL` pointing at the wrong root (bare host for a Web Admin-served deployment, or `/webadmin` where the API lives at the host root) while `MOVEIT_SERVER_HOST` diverges from the base URL host. Verify all three.
 - **Self-signed certificate errors** — set `MOVEIT_TLS_REJECT_UNAUTHORIZED=false` (non-production only).
+- **`UNABLE_TO_VERIFY_LEAF_SIGNATURE`** — the server's certificate chain is signed by a CA Node doesn't know (private CA, API gateway). Set `MOVEIT_CA_FILE` to a PEM bundle containing the leaf and intermediate certificates downloaded from your CA. This keeps TLS verification strict — prefer it over disabling verification.
 - **HTTP 422 on reports** — invalid `page`/`perPage` combinations or out-of-range `maxCount`; both must be positive integers (`maxCount` ≤ 10000).
 - **404 on newer-API tools** — tools targeting newer REST endpoints (`moveit_kill_task` 2024.1, task logs 2019.1, scheduler status 2020.1, report export 2019.1, config v2 2019.1, SSL certs / standard scripts / resource groups / ACLs 2019.1) return 404 on older servers. This is expected for the server's version and is surfaced as a tool error, not a bug.
 
