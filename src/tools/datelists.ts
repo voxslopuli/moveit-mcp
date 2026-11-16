@@ -6,7 +6,7 @@ import { jsonResult } from './util.js';
 
 export function registerMoveitDateLists(
   server: McpServer,
-  client: MoveitClient,
+  client: MoveitClient
 ): void {
   server.registerTool(
     'moveit_list_date_lists',
@@ -15,7 +15,7 @@ export function registerMoveitDateLists(
         'List date lists (named collections of dates usable in MOVEit Automation schedule conditions), with pagination and optional name filter.',
       inputSchema: ListParamsSchema,
     },
-    async (args) => jsonResult(await client.list('datelists', args)),
+    async (args) => jsonResult(await client.list('datelists', args))
   );
 
   server.registerTool(
@@ -25,6 +25,6 @@ export function registerMoveitDateLists(
       inputSchema: z.object({ dateListId: z.string().min(1) }),
     },
     async ({ dateListId }) =>
-      jsonResult(await client.get('datelists', dateListId)),
+      jsonResult(await client.get('datelists', dateListId))
   );
 }

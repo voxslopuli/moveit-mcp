@@ -10,21 +10,21 @@ import { registerMoveitSslCerts } from '../../src/tools/sslcerts.js';
 import { registerMoveitStandardScripts } from '../../src/tools/standardscripts.js';
 import { registerMoveitUserGroups } from '../../src/tools/usergroups.js';
 
-type StubClient = {
-  listSSLCerts: ReturnType<typeof vi.fn>;
-  getSSLCert: ReturnType<typeof vi.fn>;
-  listStandardScripts: ReturnType<typeof vi.fn>;
-  getStandardScript: ReturnType<typeof vi.fn>;
-  listUserGroups: ReturnType<typeof vi.fn>;
-  getUserGroup: ReturnType<typeof vi.fn>;
-  listResourceGroups: ReturnType<typeof vi.fn>;
-  getResourceGroup: ReturnType<typeof vi.fn>;
-  listACLs: ReturnType<typeof vi.fn>;
-  getACL: ReturnType<typeof vi.fn>;
+interface StubClient {
   addACL: ReturnType<typeof vi.fn>;
-  updateACL: ReturnType<typeof vi.fn>;
   deleteACL: ReturnType<typeof vi.fn>;
-};
+  getACL: ReturnType<typeof vi.fn>;
+  getResourceGroup: ReturnType<typeof vi.fn>;
+  getSSLCert: ReturnType<typeof vi.fn>;
+  getStandardScript: ReturnType<typeof vi.fn>;
+  getUserGroup: ReturnType<typeof vi.fn>;
+  listACLs: ReturnType<typeof vi.fn>;
+  listResourceGroups: ReturnType<typeof vi.fn>;
+  listSSLCerts: ReturnType<typeof vi.fn>;
+  listStandardScripts: ReturnType<typeof vi.fn>;
+  listUserGroups: ReturnType<typeof vi.fn>;
+  updateACL: ReturnType<typeof vi.fn>;
+}
 
 function makeStub(): StubClient {
   return {
@@ -46,7 +46,7 @@ function makeStub(): StubClient {
 
 async function connect(
   stub: StubClient,
-  register: (server: McpServer, client: MoveitClient) => void,
+  register: (server: McpServer, client: MoveitClient) => void
 ): Promise<Client> {
   const server = new McpServer({ name: 'test-server', version: '0.0.0' });
   register(server, stub as unknown as MoveitClient);
@@ -64,7 +64,7 @@ async function call(
   name: string,
   args: Record<string, unknown>,
   stub: StubClient,
-  register: (server: McpServer, client: MoveitClient) => void,
+  register: (server: McpServer, client: MoveitClient) => void
 ) {
   const client = await connect(stub, register);
   return (await client.callTool({ name, arguments: args })) as {
@@ -82,7 +82,7 @@ describe('moveit SSL certificate tools', () => {
       'moveit_list_ssl_certificates',
       { fields: 'Thumbprint,Name', page: 1, perPage: 25 },
       stub,
-      registerMoveitSslCerts,
+      registerMoveitSslCerts
     );
     expect(stub.listSSLCerts).toHaveBeenCalledWith({
       fields: 'Thumbprint,Name',
@@ -99,7 +99,7 @@ describe('moveit SSL certificate tools', () => {
       'moveit_list_ssl_certificates',
       {},
       stub,
-      registerMoveitSslCerts,
+      registerMoveitSslCerts
     );
     expect(stub.listSSLCerts).toHaveBeenCalledWith({});
   });
@@ -112,7 +112,7 @@ describe('moveit SSL certificate tools', () => {
       'moveit_get_ssl_certificate',
       { thumbprint: 'AB12' },
       stub,
-      registerMoveitSslCerts,
+      registerMoveitSslCerts
     );
     expect(stub.getSSLCert).toHaveBeenCalledWith('AB12');
     expect(JSON.parse(result.content[0].text)).toEqual(fixture);
@@ -124,7 +124,7 @@ describe('moveit SSL certificate tools', () => {
       'moveit_get_ssl_certificate',
       { thumbprint: '' },
       stub,
-      registerMoveitSslCerts,
+      registerMoveitSslCerts
     );
     expect(result.isError).toBe(true);
     expect(stub.getSSLCert).not.toHaveBeenCalled();
@@ -140,7 +140,7 @@ describe('moveit standard script tools', () => {
       'moveit_list_standard_scripts',
       { name: 'rotate', page: 1, perPage: 10 },
       stub,
-      registerMoveitStandardScripts,
+      registerMoveitStandardScripts
     );
     expect(stub.listStandardScripts).toHaveBeenCalledWith({
       name: 'rotate',
@@ -158,7 +158,7 @@ describe('moveit standard script tools', () => {
       'moveit_get_standard_script',
       { standardScriptId: 'rotate' },
       stub,
-      registerMoveitStandardScripts,
+      registerMoveitStandardScripts
     );
     expect(stub.getStandardScript).toHaveBeenCalledWith('rotate');
     expect(JSON.parse(result.content[0].text)).toEqual(fixture);
@@ -170,7 +170,7 @@ describe('moveit standard script tools', () => {
       'moveit_get_standard_script',
       { standardScriptId: '' },
       stub,
-      registerMoveitStandardScripts,
+      registerMoveitStandardScripts
     );
     expect(result.isError).toBe(true);
     expect(stub.getStandardScript).not.toHaveBeenCalled();
@@ -186,7 +186,7 @@ describe('moveit user group tools', () => {
       'moveit_list_user_groups',
       { name: 'admins' },
       stub,
-      registerMoveitUserGroups,
+      registerMoveitUserGroups
     );
     expect(stub.listUserGroups).toHaveBeenCalledWith({ name: 'admins' });
     expect(JSON.parse(result.content[0].text)).toEqual(fixture);
@@ -200,7 +200,7 @@ describe('moveit user group tools', () => {
       'moveit_get_user_group',
       { userGroupName: 'admins' },
       stub,
-      registerMoveitUserGroups,
+      registerMoveitUserGroups
     );
     expect(stub.getUserGroup).toHaveBeenCalledWith('admins');
     expect(JSON.parse(result.content[0].text)).toEqual(fixture);
@@ -212,7 +212,7 @@ describe('moveit user group tools', () => {
       'moveit_get_user_group',
       { userGroupName: '' },
       stub,
-      registerMoveitUserGroups,
+      registerMoveitUserGroups
     );
     expect(result.isError).toBe(true);
     expect(stub.getUserGroup).not.toHaveBeenCalled();
@@ -228,7 +228,7 @@ describe('moveit resource group tools', () => {
       'moveit_list_resource_groups',
       { page: 1, perPage: 25 },
       stub,
-      registerMoveitResourceGroups,
+      registerMoveitResourceGroups
     );
     expect(stub.listResourceGroups).toHaveBeenCalledWith({
       page: 1,
@@ -245,7 +245,7 @@ describe('moveit resource group tools', () => {
       'moveit_get_resource_group',
       { resourceGroupName: 'reports' },
       stub,
-      registerMoveitResourceGroups,
+      registerMoveitResourceGroups
     );
     expect(stub.getResourceGroup).toHaveBeenCalledWith('reports');
     expect(JSON.parse(result.content[0].text)).toEqual(fixture);
@@ -257,7 +257,7 @@ describe('moveit resource group tools', () => {
       'moveit_get_resource_group',
       { resourceGroupName: '' },
       stub,
-      registerMoveitResourceGroups,
+      registerMoveitResourceGroups
     );
     expect(result.isError).toBe(true);
     expect(stub.getResourceGroup).not.toHaveBeenCalled();
@@ -273,7 +273,7 @@ describe('moveit ACL tools', () => {
       'moveit_list_acls',
       { page: 1 },
       stub,
-      registerMoveitAcls,
+      registerMoveitAcls
     );
     expect(stub.listACLs).toHaveBeenCalledWith({ page: 1 });
     expect(JSON.parse(result.content[0].text)).toEqual(fixture);
@@ -287,7 +287,7 @@ describe('moveit ACL tools', () => {
       'moveit_get_acl',
       { aclId: '5' },
       stub,
-      registerMoveitAcls,
+      registerMoveitAcls
     );
     expect(stub.getACL).toHaveBeenCalledWith('5');
     expect(JSON.parse(result.content[0].text)).toEqual(fixture);
@@ -299,7 +299,7 @@ describe('moveit ACL tools', () => {
       'moveit_get_acl',
       { aclId: '' },
       stub,
-      registerMoveitAcls,
+      registerMoveitAcls
     );
     expect(result.isError).toBe(true);
     expect(stub.getACL).not.toHaveBeenCalled();
@@ -313,7 +313,7 @@ describe('moveit ACL tools', () => {
       'moveit_add_acl',
       { acl },
       stub,
-      registerMoveitAcls,
+      registerMoveitAcls
     );
     expect(stub.addACL).toHaveBeenCalledWith(acl);
     expect(JSON.parse(result.content[0].text)).toEqual({ ...acl, ID: '5' });
@@ -325,7 +325,7 @@ describe('moveit ACL tools', () => {
       'moveit_add_acl',
       { acl: {} },
       stub,
-      registerMoveitAcls,
+      registerMoveitAcls
     );
     expect(result.isError).toBe(true);
     expect(stub.addACL).not.toHaveBeenCalled();
@@ -339,7 +339,7 @@ describe('moveit ACL tools', () => {
       'moveit_update_acl',
       { aclId: '5', acl },
       stub,
-      registerMoveitAcls,
+      registerMoveitAcls
     );
     expect(stub.updateACL).toHaveBeenCalledWith('5', acl);
     expect(JSON.parse(result.content[0].text)).toEqual(acl);
@@ -351,7 +351,7 @@ describe('moveit ACL tools', () => {
       'moveit_update_acl',
       { aclId: '5', acl: {} },
       stub,
-      registerMoveitAcls,
+      registerMoveitAcls
     );
     expect(result.isError).toBe(true);
     expect(stub.updateACL).not.toHaveBeenCalled();
@@ -364,7 +364,7 @@ describe('moveit ACL tools', () => {
       'moveit_delete_acl',
       { aclId: '5' },
       stub,
-      registerMoveitAcls,
+      registerMoveitAcls
     );
     expect(stub.deleteACL).toHaveBeenCalledWith('5');
     expect(JSON.parse(result.content[0].text)).toBeNull();
@@ -376,7 +376,7 @@ describe('moveit ACL tools', () => {
       'moveit_delete_acl',
       { aclId: '' },
       stub,
-      registerMoveitAcls,
+      registerMoveitAcls
     );
     expect(result.isError).toBe(true);
     expect(stub.deleteACL).not.toHaveBeenCalled();

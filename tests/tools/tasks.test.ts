@@ -4,14 +4,14 @@ import { describe, expect, it, vi } from 'vitest';
 import type { MoveitClient } from '../../src/client.js';
 import { registerMoveitTasks } from '../../src/tools/tasks.js';
 
-type StubClient = {
-  list: ReturnType<typeof vi.fn>;
+interface StubClient {
   get: ReturnType<typeof vi.fn>;
+  list: ReturnType<typeof vi.fn>;
   runningTasks: ReturnType<typeof vi.fn>;
+  setScheduler: ReturnType<typeof vi.fn>;
   startTask: ReturnType<typeof vi.fn>;
   stopTask: ReturnType<typeof vi.fn>;
-  setScheduler: ReturnType<typeof vi.fn>;
-};
+}
 
 function makeStub(): StubClient {
   return {
@@ -25,7 +25,7 @@ function makeStub(): StubClient {
 }
 
 async function connect(
-  stub: StubClient,
+  stub: StubClient
 ): Promise<{ client: Client; server: McpServer }> {
   const server = new McpServer({ name: 'test-server', version: '0.0.0' });
   registerMoveitTasks(server, stub as unknown as MoveitClient);
@@ -42,7 +42,7 @@ async function connect(
 async function call(
   name: string,
   args: Record<string, unknown>,
-  stub: StubClient,
+  stub: StubClient
 ) {
   const { client } = await connect(stub);
   return (await client.callTool({ name, arguments: args })) as {
@@ -64,7 +64,7 @@ describe('moveit task tools', () => {
     const result = await call(
       'moveit_list_tasks',
       { name: 'sync', page: 1, perPage: 25, fields: 'TaskID,Name' },
-      stub,
+      stub
     );
     expect(stub.list).toHaveBeenCalledWith('tasks', {
       name: 'sync',
@@ -107,7 +107,7 @@ describe('moveit task tools', () => {
     const result = await call(
       'moveit_start_task',
       { taskId: '42', parameters: { comment: 'go' } },
-      stub,
+      stub
     );
     expect(stub.startTask).toHaveBeenCalledWith('42', { comment: 'go' });
     expect(JSON.parse(result.content[0].text)).toEqual(fixture);
@@ -140,33 +140,33 @@ describe('moveit task tools', () => {
   it('mutating tools describe their mutating action', async () => {
     const tools = await listTools();
     expect(
-      tools.find((t) => t.name === 'moveit_start_task')?.description,
-    ).toMatch(/start/i);
+      tools.find((t) => t.name === 'moveit_start_task')?.description
+    ).toMatch(/start/iu);
     expect(
-      tools.find((t) => t.name === 'moveit_stop_task')?.description,
-    ).toMatch(/stop/i);
+      tools.find((t) => t.name === 'moveit_stop_task')?.description
+    ).toMatch(/stop/iu);
     expect(
-      tools.find((t) => t.name === 'moveit_set_scheduler')?.description,
-    ).toMatch(/scheduler/i);
+      tools.find((t) => t.name === 'moveit_set_scheduler')?.description
+    ).toMatch(/scheduler/iu);
     for (const name of [
       'moveit_start_task',
       'moveit_stop_task',
       'moveit_set_scheduler',
     ]) {
       expect(
-        tools.find((t) => t.name === name)?.description?.length,
+        tools.find((t) => t.name === name)?.description?.length
       ).toBeGreaterThan(0);
     }
   });
 });
 
 describe('moveit task log / kill / scheduler status tools', () => {
-  type LogStub = {
-    listTaskLogs: ReturnType<typeof vi.fn>;
+  interface LogStub {
+    getSchedulerStatus: ReturnType<typeof vi.fn>;
     getTaskLog: ReturnType<typeof vi.fn>;
     killTask: ReturnType<typeof vi.fn>;
-    getSchedulerStatus: ReturnType<typeof vi.fn>;
-  };
+    listTaskLogs: ReturnType<typeof vi.fn>;
+  }
 
   function makeLogStub(): LogStub {
     return {
@@ -180,7 +180,7 @@ describe('moveit task log / kill / scheduler status tools', () => {
   async function callLog(
     name: string,
     args: Record<string, unknown>,
-    stub: LogStub,
+    stub: LogStub
   ) {
     const server = new McpServer({ name: 'test-server', version: '0.0.0' });
     registerMoveitTasks(server, stub as unknown as MoveitClient);
@@ -209,7 +209,7 @@ describe('moveit task log / kill / scheduler status tools', () => {
     const result = await callLog(
       'moveit_list_task_logs',
       { taskId: '42', page: 1, perPage: 10, fields: 'TaskLogID' },
-      stub,
+      stub
     );
     expect(stub.listTaskLogs).toHaveBeenCalledWith('42', {
       page: 1,
@@ -233,7 +233,7 @@ describe('moveit task log / kill / scheduler status tools', () => {
     const result = await callLog(
       'moveit_get_task_log',
       { taskId: '42', taskLogId: '987' },
-      stub,
+      stub
     );
     expect(stub.getTaskLog).toHaveBeenCalledWith('42', '987');
     expect(JSON.parse(result.content[0].text)).toEqual(fixture);
@@ -247,7 +247,7 @@ describe('moveit task log / kill / scheduler status tools', () => {
     expect(JSON.parse(result.content[0].text)).toEqual({ ok: true });
     const tools = await logTools();
     const desc = tools.find((t) => t.name === 'moveit_kill_task')?.description;
-    expect(desc).toMatch(/Force-kill/i);
+    expect(desc).toMatch(/Force-kill/iu);
     expect(desc).toContain('moveit_stop_task');
     expect(desc).toContain('2024.1+');
   });
@@ -261,7 +261,7 @@ describe('moveit task log / kill / scheduler status tools', () => {
     expect(JSON.parse(result.content[0].text)).toEqual(fixture);
     const tools = await logTools();
     expect(
-      tools.find((t) => t.name === 'moveit_get_scheduler_status')?.description,
+      tools.find((t) => t.name === 'moveit_get_scheduler_status')?.description
     ).toContain('2020.1+');
   });
 });

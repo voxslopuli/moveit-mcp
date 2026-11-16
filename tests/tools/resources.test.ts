@@ -6,10 +6,10 @@ import { registerMoveitGlobalParameters } from '../../src/tools/globalparameters
 import { registerMoveitHosts } from '../../src/tools/hosts.js';
 import { registerMoveitTaskGroups } from '../../src/tools/taskgroups.js';
 
-type StubClient = {
-  list: ReturnType<typeof vi.fn>;
+interface StubClient {
   get: ReturnType<typeof vi.fn>;
-};
+  list: ReturnType<typeof vi.fn>;
+}
 
 function makeStub(): StubClient {
   return { list: vi.fn(), get: vi.fn() };
@@ -17,7 +17,7 @@ function makeStub(): StubClient {
 
 async function connect(
   stub: StubClient,
-  register: (server: McpServer, client: MoveitClient) => void,
+  register: (server: McpServer, client: MoveitClient) => void
 ): Promise<Client> {
   const server = new McpServer({ name: 'test-server', version: '0.0.0' });
   register(server, stub as unknown as MoveitClient);
@@ -35,7 +35,7 @@ async function call(
   name: string,
   args: Record<string, unknown>,
   stub: StubClient,
-  register: (server: McpServer, client: MoveitClient) => void,
+  register: (server: McpServer, client: MoveitClient) => void
 ) {
   const client = await connect(stub, register);
   return (await client.callTool({ name, arguments: args })) as {
@@ -53,7 +53,7 @@ describe('moveit host tools', () => {
       'moveit_list_hosts',
       { page: 1, perPage: 25, type: 'S3' },
       stub,
-      registerMoveitHosts,
+      registerMoveitHosts
     );
     expect(stub.list).toHaveBeenCalledWith('hosts', {
       page: 1,
@@ -71,7 +71,7 @@ describe('moveit host tools', () => {
       'moveit_get_host',
       { hostId: 'AWS S3' },
       stub,
-      registerMoveitHosts,
+      registerMoveitHosts
     );
     expect(stub.get).toHaveBeenCalledWith('hosts', 'AWS S3');
     expect(JSON.parse(result.content[0].text)).toEqual(fixture);
@@ -83,7 +83,7 @@ describe('moveit host tools', () => {
       'moveit_get_host',
       { hostId: '' },
       stub,
-      registerMoveitHosts,
+      registerMoveitHosts
     );
     expect(result.isError).toBe(true);
     expect(stub.get).not.toHaveBeenCalled();
@@ -99,7 +99,7 @@ describe('moveit task group tools', () => {
       'moveit_list_task_groups',
       { page: 2, perPage: 10 },
       stub,
-      registerMoveitTaskGroups,
+      registerMoveitTaskGroups
     );
     expect(stub.list).toHaveBeenCalledWith('taskgroups', {
       page: 2,
@@ -116,7 +116,7 @@ describe('moveit task group tools', () => {
       'moveit_get_task_group',
       { taskGroupName: 'Group A' },
       stub,
-      registerMoveitTaskGroups,
+      registerMoveitTaskGroups
     );
     expect(stub.get).toHaveBeenCalledWith('taskgroups', 'Group A');
     expect(JSON.parse(result.content[0].text)).toEqual(fixture);
@@ -132,7 +132,7 @@ describe('moveit global parameter tools', () => {
       'moveit_list_global_parameters',
       {},
       stub,
-      registerMoveitGlobalParameters,
+      registerMoveitGlobalParameters
     );
     expect(stub.list).toHaveBeenCalledWith('globalparameters', {});
     expect(JSON.parse(result.content[0].text)).toEqual(fixture);
@@ -146,7 +146,7 @@ describe('moveit global parameter tools', () => {
       'moveit_get_global_parameter',
       { name: 'AdminTimeout' },
       stub,
-      registerMoveitGlobalParameters,
+      registerMoveitGlobalParameters
     );
     expect(stub.get).toHaveBeenCalledWith('globalparameters', 'AdminTimeout');
     expect(JSON.parse(result.content[0].text)).toEqual(fixture);
@@ -161,7 +161,7 @@ describe('tool error handling', () => {
       'moveit_list_hosts',
       {},
       stub,
-      registerMoveitHosts,
+      registerMoveitHosts
     );
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('HTTP 401: unauthorized');

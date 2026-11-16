@@ -6,7 +6,7 @@ import { jsonResult } from './util.js';
 
 export function registerMoveitCustomScripts(
   server: McpServer,
-  client: MoveitClient,
+  client: MoveitClient
 ): void {
   server.registerTool(
     'moveit_list_custom_scripts',
@@ -15,7 +15,7 @@ export function registerMoveitCustomScripts(
         'List custom scripts configured in MOVEit Automation, with pagination and optional name filter.',
       inputSchema: ListParamsSchema,
     },
-    async (args) => jsonResult(await client.list('customscripts', args)),
+    async (args) => jsonResult(await client.list('customscripts', args))
   );
 
   server.registerTool(
@@ -26,6 +26,6 @@ export function registerMoveitCustomScripts(
       inputSchema: z.object({ customScriptId: z.string().min(1) }),
     },
     async ({ customScriptId }) =>
-      jsonResult(await client.get('customscripts', customScriptId)),
+      jsonResult(await client.get('customscripts', customScriptId))
   );
 }

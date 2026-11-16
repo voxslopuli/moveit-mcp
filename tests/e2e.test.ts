@@ -10,10 +10,10 @@ describe('stdio e2e smoke', () => {
 
   afterEach(async () => {
     await client?.close();
-    await fake?.close();
-    if (transport) {
-      const pid = transport.pid;
-      if (pid) process.kill(pid, 'SIGTERM');
+    await fake.close();
+    const { pid } = transport;
+    if (typeof pid === 'number') {
+      process.kill(pid, 'SIGTERM');
     }
   });
 
@@ -26,7 +26,9 @@ describe('stdio e2e smoke', () => {
     };
     for (const key of ['PATH', 'HOME'] as const) {
       const v = process.env[key];
-      if (v) childEnv[key] = v;
+      if (v) {
+        childEnv[key] = v;
+      }
     }
     transport = new StdioClientTransport({
       command: 'npx',
@@ -182,8 +184,8 @@ describe('stdio e2e smoke', () => {
     });
     expect(
       JSON.parse(
-        (sslCerts.content as Array<{ type: string; text: string }>)[0].text,
-      ).items,
+        (sslCerts.content as Array<{ type: string; text: string }>)[0].text
+      ).items
     ).toEqual([{ Thumbprint: 'AB12', Name: 'Root CA' }]);
 
     const cert = await client.callTool({
@@ -192,8 +194,8 @@ describe('stdio e2e smoke', () => {
     });
     expect(
       JSON.parse(
-        (cert.content as Array<{ type: string; text: string }>)[0].text,
-      ),
+        (cert.content as Array<{ type: string; text: string }>)[0].text
+      )
     ).toEqual({
       Thumbprint: 'AB12',
       Name: 'Root CA',
@@ -205,8 +207,8 @@ describe('stdio e2e smoke', () => {
     });
     expect(
       JSON.parse(
-        (scripts.content as Array<{ type: string; text: string }>)[0].text,
-      ),
+        (scripts.content as Array<{ type: string; text: string }>)[0].text
+      )
     ).toEqual({
       Name: 'pgp-encrypt',
     });
@@ -217,8 +219,8 @@ describe('stdio e2e smoke', () => {
     });
     expect(
       JSON.parse(
-        (userGroup.content as Array<{ type: string; text: string }>)[0].text,
-      ),
+        (userGroup.content as Array<{ type: string; text: string }>)[0].text
+      )
     ).toEqual({
       Name: 'admins',
     });
@@ -229,9 +231,8 @@ describe('stdio e2e smoke', () => {
     });
     expect(
       JSON.parse(
-        (resourceGroup.content as Array<{ type: string; text: string }>)[0]
-          .text,
-      ),
+        (resourceGroup.content as Array<{ type: string; text: string }>)[0].text
+      )
     ).toEqual({
       Name: 'reports',
     });
@@ -239,8 +240,8 @@ describe('stdio e2e smoke', () => {
     const acls = await client.callTool({ name: 'moveit_list_acls' });
     expect(
       JSON.parse(
-        (acls.content as Array<{ type: string; text: string }>)[0].text,
-      ).items,
+        (acls.content as Array<{ type: string; text: string }>)[0].text
+      ).items
     ).toEqual([{ ID: '5', Permission: 15 }]);
 
     const addedAcl = await client.callTool({
@@ -249,8 +250,8 @@ describe('stdio e2e smoke', () => {
     });
     expect(
       JSON.parse(
-        (addedAcl.content as Array<{ type: string; text: string }>)[0].text,
-      ),
+        (addedAcl.content as Array<{ type: string; text: string }>)[0].text
+      )
     ).toEqual({
       Type: 'usergroup',
       Permission: 15,
@@ -262,8 +263,8 @@ describe('stdio e2e smoke', () => {
     });
     expect(
       JSON.parse(
-        (updatedAcl.content as Array<{ type: string; text: string }>)[0].text,
-      ),
+        (updatedAcl.content as Array<{ type: string; text: string }>)[0].text
+      )
     ).toEqual({
       ID: '5',
       Permission: 7,
@@ -275,8 +276,8 @@ describe('stdio e2e smoke', () => {
     });
     expect(
       JSON.parse(
-        (deletedAcl.content as Array<{ type: string; text: string }>)[0].text,
-      ),
+        (deletedAcl.content as Array<{ type: string; text: string }>)[0].text
+      )
     ).toEqual({
       deleted: '5',
     });

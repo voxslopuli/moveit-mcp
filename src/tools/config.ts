@@ -9,7 +9,7 @@ const NonEmptyRecord = z
 
 export function registerMoveitConfig(
   server: McpServer,
-  client: MoveitClient,
+  client: MoveitClient
 ): void {
   server.registerTool(
     'moveit_get_config',
@@ -18,7 +18,7 @@ export function registerMoveitConfig(
         'Export the MOVEit Automation configuration (admin-only; returns the full AdminConfigModel).',
       inputSchema: z.object({}),
     },
-    async () => jsonResult(await client.getConfig()),
+    async () => jsonResult(await client.getConfig())
   );
 
   server.registerTool(
@@ -28,7 +28,7 @@ export function registerMoveitConfig(
         'IMPORT (overwrite) the entire MOVEit Automation configuration with the given AdminConfigModel. DESTRUCTIVE: replaces all existing configuration. Get the current config first, modify, then import.',
       inputSchema: z.object({ config: NonEmptyRecord }),
     },
-    async ({ config }) => jsonResult(await client.putConfig(config)),
+    async ({ config }) => jsonResult(await client.putConfig(config))
   );
   server.registerTool(
     'moveit_export_config_v2',
@@ -45,7 +45,7 @@ export function registerMoveitConfig(
         }),
     },
     async ({ passphrase, sanitize }) =>
-      jsonResult(await client.exportConfigV2({ passphrase, sanitize })),
+      jsonResult(await client.exportConfigV2({ passphrase, sanitize }))
   );
 
   server.registerTool(
@@ -61,6 +61,6 @@ export function registerMoveitConfig(
     async ({ configXML, passphrase }) => {
       await client.importConfigV2(configXML, passphrase);
       return jsonResult({ imported: true });
-    },
+    }
   );
 }

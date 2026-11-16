@@ -12,7 +12,7 @@ const AclSchema = z
 
 export function registerMoveitResourceGroups(
   server: McpServer,
-  client: MoveitClient,
+  client: MoveitClient
 ): void {
   server.registerTool(
     'moveit_list_resource_groups',
@@ -21,7 +21,7 @@ export function registerMoveitResourceGroups(
         'List MOVEit Automation resource groups, with optional name filter and pagination.',
       inputSchema: ListParamsSchema,
     },
-    async (args) => jsonResult(await client.listResourceGroups(args)),
+    async (args) => jsonResult(await client.listResourceGroups(args))
   );
 
   server.registerTool(
@@ -31,13 +31,13 @@ export function registerMoveitResourceGroups(
       inputSchema: z.object({ resourceGroupName: z.string().min(1) }),
     },
     async ({ resourceGroupName }) =>
-      jsonResult(await client.getResourceGroup(resourceGroupName)),
+      jsonResult(await client.getResourceGroup(resourceGroupName))
   );
 }
 
 export function registerMoveitAcls(
   server: McpServer,
-  client: MoveitClient,
+  client: MoveitClient
 ): void {
   server.registerTool(
     'moveit_list_acls',
@@ -46,7 +46,7 @@ export function registerMoveitAcls(
         'List ACL entries controlling resource group access, with pagination.',
       inputSchema: PagedListParamsSchema,
     },
-    async (args) => jsonResult(await client.listACLs(args)),
+    async (args) => jsonResult(await client.listACLs(args))
   );
 
   server.registerTool(
@@ -55,7 +55,7 @@ export function registerMoveitAcls(
       description: 'Get a single ACL entry by its ACL ID.',
       inputSchema: z.object({ aclId: z.string().min(1) }),
     },
-    async ({ aclId }) => jsonResult(await client.getACL(aclId)),
+    async ({ aclId }) => jsonResult(await client.getACL(aclId))
   );
 
   server.registerTool(
@@ -65,7 +65,7 @@ export function registerMoveitAcls(
         'Create an ACL entry that grants a permission on a resource group. Mutating: adds access control state on the server.',
       inputSchema: z.object({ acl: AclSchema }),
     },
-    async ({ acl }) => jsonResult(await client.addACL(acl)),
+    async ({ acl }) => jsonResult(await client.addACL(acl))
   );
 
   server.registerTool(
@@ -75,7 +75,7 @@ export function registerMoveitAcls(
         'Replace an existing ACL entry with the supplied JSON. Mutating: overwrites the ACL identified by aclId.',
       inputSchema: z.object({ aclId: z.string().min(1), acl: AclSchema }),
     },
-    async ({ aclId, acl }) => jsonResult(await client.updateACL(aclId, acl)),
+    async ({ aclId, acl }) => jsonResult(await client.updateACL(aclId, acl))
   );
 
   server.registerTool(
@@ -85,6 +85,6 @@ export function registerMoveitAcls(
         'Delete an ACL entry by its ACL ID. DESTRUCTIVE: removes the permission with no undo.',
       inputSchema: z.object({ aclId: z.string().min(1) }),
     },
-    async ({ aclId }) => jsonResult(await client.deleteACL(aclId)),
+    async ({ aclId }) => jsonResult(await client.deleteACL(aclId))
   );
 }

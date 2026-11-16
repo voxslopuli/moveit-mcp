@@ -11,7 +11,7 @@ import { jsonResult } from '../src/tools/util.js';
 describe('ListParamsSchema', () => {
   it('accepts valid pagination params', () => {
     expect(ListParamsSchema.safeParse({ page: 1, perPage: 25 }).success).toBe(
-      true,
+      true
     );
   });
 
@@ -35,7 +35,7 @@ describe('HostListParamsSchema', () => {
 
   it('rejects an invalid host type', () => {
     expect(HostListParamsSchema.safeParse({ type: 'Gopher' }).success).toBe(
-      false,
+      false
     );
   });
 
@@ -47,7 +47,7 @@ describe('HostListParamsSchema', () => {
 describe('PgpListParamsSchema', () => {
   it('accepts uid', () => {
     expect(
-      PgpListParamsSchema.safeParse({ uid: 'user@example.com' }).success,
+      PgpListParamsSchema.safeParse({ uid: 'user@example.com' }).success
     ).toBe(true);
   });
 
@@ -79,8 +79,8 @@ describe('ReportQuerySchema', () => {
     expect(
       ReportQuerySchema.safeParse({
         predicate: "Status = 'x'",
-        maxCount: 10001,
-      }).success,
+        maxCount: 10_001,
+      }).success
     ).toBe(false);
   });
 
@@ -88,8 +88,8 @@ describe('ReportQuerySchema', () => {
     expect(
       ReportQuerySchema.safeParse({
         predicate: "Status = 'x'",
-        maxCount: 10000,
-      }).success,
+        maxCount: 10_000,
+      }).success
     ).toBe(true);
   });
 });

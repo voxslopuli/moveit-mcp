@@ -6,7 +6,7 @@ import { jsonResult } from './util.js';
 
 export function registerMoveitUserGroups(
   server: McpServer,
-  client: MoveitClient,
+  client: MoveitClient
 ): void {
   server.registerTool(
     'moveit_list_user_groups',
@@ -15,7 +15,7 @@ export function registerMoveitUserGroups(
         'List MOVEit Automation user groups, with optional name filter and pagination.',
       inputSchema: ListParamsSchema,
     },
-    async (args) => jsonResult(await client.listUserGroups(args)),
+    async (args) => jsonResult(await client.listUserGroups(args))
   );
 
   server.registerTool(
@@ -25,6 +25,6 @@ export function registerMoveitUserGroups(
       inputSchema: z.object({ userGroupName: z.string().min(1) }),
     },
     async ({ userGroupName }) =>
-      jsonResult(await client.getUserGroup(userGroupName)),
+      jsonResult(await client.getUserGroup(userGroupName))
   );
 }

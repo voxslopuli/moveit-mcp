@@ -1,7 +1,8 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.6.8/schema.json",
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "extends": ["ultracite/biome/core", "ultracite/biome/vitest"],
   "files": {
-    "includes": ["**", "!node_modules", "!dist", "!docs", "!CHANGELOG.md"]
+    "includes": ["!node_modules", "!dist", "!docs", "!CHANGELOG.md"]
   },
   "formatter": {
     "enabled": true,
@@ -16,5 +17,28 @@
       "quoteStyle": "single",
       "semicolons": "always"
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["tests/**"],
+      "linter": {
+        "rules": {
+          "performance": {
+            "useTopLevelRegex": "off"
+          },
+          "suspicious": {
+            "useAwait": "off",
+            "noReturnAssign": "off",
+            "noConditionalExpect": "off"
+          },
+          "complexity": {
+            "noExcessiveCognitiveComplexity": "off"
+          },
+          "style": {
+            "useNamedCaptureGroup": "off"
+          }
+        }
+      }
+    }
+  ]
 }

@@ -4,16 +4,16 @@ import { describe, expect, it, vi } from 'vitest';
 import type { MoveitClient } from '../../src/client.js';
 import { registerMoveitReports } from '../../src/tools/reports.js';
 
-type StubClient = {
+interface StubClient {
   report: ReturnType<typeof vi.fn>;
-};
+}
 
 function makeStub(): StubClient {
   return { report: vi.fn() };
 }
 
 async function connect(
-  stub: StubClient,
+  stub: StubClient
 ): Promise<{ client: Client; server: McpServer }> {
   const server = new McpServer({ name: 'test-server', version: '0.0.0' });
   registerMoveitReports(server, stub as unknown as MoveitClient);
@@ -30,7 +30,7 @@ async function connect(
 async function call(
   name: string,
   args: Record<string, unknown>,
-  stub: StubClient,
+  stub: StubClient
 ) {
   const { client } = await connect(stub);
   return (await client.callTool({ name, arguments: args })) as {
@@ -80,7 +80,7 @@ describe('moveit report tools', () => {
     const result = await call(
       'moveit_task_runs_report',
       { predicate: 'Status=in=("Success","Failure")', orderBy: '!StartTime' },
-      stub,
+      stub
     );
     expect(stub.report).toHaveBeenCalledWith('taskruns', {
       predicate: 'Status=in=("Success","Failure")',
@@ -96,7 +96,7 @@ describe('moveit report tools', () => {
     await call(
       'moveit_task_runs_report',
       { predicate, orderBy: '!StartTime' },
-      stub,
+      stub
     );
     expect(stub.report.mock.calls[0][1].predicate).toBe(predicate);
   });
@@ -108,11 +108,11 @@ describe('moveit report tools', () => {
     expect(desc('moveit_audit_report')).toContain('Status=="Failure"');
     expect(desc('moveit_audit_report')).toContain('!LogTime');
     expect(desc('moveit_file_activity_report')).toContain(
-      'StatusCode=out=("5000","5010")',
+      'StatusCode=out=("5000","5010")'
     );
     expect(desc('moveit_file_activity_report')).toContain('!LogStamp');
     expect(desc('moveit_task_runs_report')).toContain(
-      'Status=in=("Success","Failure")',
+      'Status=in=("Success","Failure")'
     );
     expect(desc('moveit_task_runs_report')).toContain('!StartTime');
   });
@@ -126,7 +126,9 @@ describe('moveit report tools', () => {
 });
 
 describe('moveit_export_report tool', () => {
-  type ExportStub = { exportReport: ReturnType<typeof vi.fn> };
+  interface ExportStub {
+    exportReport: ReturnType<typeof vi.fn>;
+  }
 
   function makeExportStub(): ExportStub {
     return { exportReport: vi.fn() };
@@ -172,9 +174,9 @@ describe('moveit_export_report tool', () => {
     await Promise.all([server.connect(st), client.connect(ct)]);
     const tools = await client.listTools();
     const desc = tools.tools.find(
-      (t) => t.name === 'moveit_export_report',
+      (t) => t.name === 'moveit_export_report'
     )?.description;
     expect(desc).toContain('2019.1+');
-    expect(desc).toMatch(/export/i);
+    expect(desc).toMatch(/export/iu);
   });
 });

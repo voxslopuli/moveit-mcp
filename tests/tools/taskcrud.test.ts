@@ -4,11 +4,11 @@ import { describe, expect, it, vi } from 'vitest';
 import type { MoveitClient } from '../../src/client.js';
 import { registerMoveitTaskCrud } from '../../src/tools/taskcrud.js';
 
-type StubClient = {
+interface StubClient {
   createTask: ReturnType<typeof vi.fn>;
-  updateTask: ReturnType<typeof vi.fn>;
   deleteTask: ReturnType<typeof vi.fn>;
-};
+  updateTask: ReturnType<typeof vi.fn>;
+}
 
 function makeStub(): StubClient {
   return {
@@ -34,7 +34,7 @@ async function connect(stub: StubClient) {
 async function call(
   name: string,
   args: Record<string, unknown>,
-  stub: StubClient,
+  stub: StubClient
 ) {
   const { client } = await connect(stub);
   return (await client.callTool({ name, arguments: args })) as {
@@ -74,7 +74,7 @@ describe('moveit task crud tools', () => {
     const result = await call(
       'moveit_update_task',
       { taskId: '42', task },
-      stub,
+      stub
     );
     expect(stub.updateTask).toHaveBeenCalledWith('42', task);
     expect(JSON.parse(result.content[0].text)).toEqual(fixture);
@@ -85,12 +85,12 @@ describe('moveit task crud tools', () => {
     const emptyId = await call(
       'moveit_update_task',
       { taskId: '', task: { name: 'x' } },
-      stub,
+      stub
     );
     const emptyTask = await call(
       'moveit_update_task',
       { taskId: '42', task: {} },
-      stub,
+      stub
     );
     expect(emptyId.isError).toBe(true);
     expect(emptyTask.isError).toBe(true);

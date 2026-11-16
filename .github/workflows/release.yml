@@ -2,7 +2,7 @@ name: Release
 
 on:
   push:
-    tags: ["v*"]
+    tags: [ "v*" ]
   workflow_dispatch:
     inputs:
       version:
@@ -479,7 +479,7 @@ jobs:
 
   rollback:
     name: Rollback failed release
-    needs: [detect-tag, release]
+    needs: [ detect-tag, release ]
     if: always() && ((needs.release.result == 'failure' && needs.detect-tag.outputs.release_tag != '') || (needs.detect-tag.result == 'failure' && needs.detect-tag.outputs.bump_sha != '') || (needs.detect-tag.outputs.created_by_dispatch == 'true' && cancelled() && needs.detect-tag.outputs.bump_sha != ''))
     runs-on: ubuntu-latest
     timeout-minutes: 5

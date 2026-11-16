@@ -1,11 +1,11 @@
 import * as http from 'node:http';
 
 export interface FakeMoveit {
-  server: http.Server;
+  close: () => Promise<void>;
   port: number;
-  close(): Promise<void>;
-  seenBearer(): boolean;
-  seenTokens(): string[];
+  seenBearer: () => boolean;
+  seenTokens: () => string[];
+  server: http.Server;
 }
 
 export function startFakeMoveit(): Promise<FakeMoveit> {
@@ -13,12 +13,12 @@ export function startFakeMoveit(): Promise<FakeMoveit> {
   const tokens: string[] = [];
   const app = http.createServer(
     (req: http.IncomingMessage, res: http.ServerResponse) => {
-      const auth = req.headers.authorization;
+      const { authorization: auth } = req.headers;
       if (typeof auth === 'string' && auth.startsWith('Bearer ')) {
         seenBearer = true;
         tokens.push(auth.slice('Bearer '.length));
       }
-      const pathname = new URL(req.url ?? '/', 'http://x').pathname;
+      const { pathname } = new URL(req.url ?? '/', 'http://x');
       res.setHeader('Content-Type', 'application/json');
       if (req.method === 'POST' && pathname === '/webadmin/api/v1/token') {
         res.end(
@@ -27,7 +27,7 @@ export function startFakeMoveit(): Promise<FakeMoveit> {
             token_type: 'bearer',
             expires_in: 900,
             refresh_token: 'fake-refresh-1',
-          }),
+          })
         );
         return;
       }
@@ -36,7 +36,7 @@ export function startFakeMoveit(): Promise<FakeMoveit> {
           JSON.stringify({
             version: '2019.1.0',
             server: 'MOVEit Automation',
-          }),
+          })
         );
         return;
       }
@@ -45,7 +45,7 @@ export function startFakeMoveit(): Promise<FakeMoveit> {
           JSON.stringify({
             paging: { page: 1, perPage: 25, total: 1 },
             items: [{ ID: '226676691', Name: '!TaylorImportTest', Active: 0 }],
-          }),
+          })
         );
         return;
       }
@@ -66,7 +66,7 @@ export function startFakeMoveit(): Promise<FakeMoveit> {
         return;
       }
       {
-        const m = pathname.match(/^\/webadmin\/api\/v1\/tasks\/([^/]+)$/);
+        const m = pathname.match(/^\/webadmin\/api\/v1\/tasks\/([^/]+)$/u);
         if (m && req.method === 'PUT') {
           let body = '';
           req.on('data', (c: Buffer) => (body += c));
@@ -82,31 +82,31 @@ export function startFakeMoveit(): Promise<FakeMoveit> {
       }
       {
         const logMatch = pathname.match(
-          /^\/webadmin\/api\/v1\/tasks\/([^/]+)\/log$/,
+          /^\/webadmin\/api\/v1\/tasks\/([^/]+)\/log$/u
         );
         if (logMatch && req.method === 'GET') {
           res.end(
             JSON.stringify({
               paging: { page: 1, perPage: 25, total: 1 },
               items: [{ TaskLogID: '987', Name: 'log-entry-1' }],
-            }),
+            })
           );
           return;
         }
         const logIdMatch = pathname.match(
-          /^\/webadmin\/api\/v1\/tasks\/([^/]+)\/log\/([^/]+)$/,
+          /^\/webadmin\/api\/v1\/tasks\/([^/]+)\/log\/([^/]+)$/u
         );
         if (logIdMatch && req.method === 'GET') {
           res.end(
             JSON.stringify({
               TaskLogID: logIdMatch[2],
               LogData: 'line1\nline2',
-            }),
+            })
           );
           return;
         }
         const killMatch = pathname.match(
-          /^\/webadmin\/api\/v1\/tasks\/([^/]+)\/kill$/,
+          /^\/webadmin\/api\/v1\/tasks\/([^/]+)\/kill$/u
         );
         if (killMatch && req.method === 'POST') {
           res.end(JSON.stringify({ killed: killMatch[1] }));
@@ -192,28 +192,28 @@ export function startFakeMoveit(): Promise<FakeMoveit> {
         return;
       }
       const certMatch = pathname.match(
-        /^\/webadmin\/api\/v1\/sslcerts\/([^/]+)$/,
+        /^\/webadmin\/api\/v1\/sslcerts\/([^/]+)$/u
       );
       if (certMatch && req.method === 'GET') {
         res.end(JSON.stringify({ Thumbprint: certMatch[1], Name: 'Root CA' }));
         return;
       }
       const scriptMatch = pathname.match(
-        /^\/webadmin\/api\/v1\/standardscripts\/([^/]+)$/,
+        /^\/webadmin\/api\/v1\/standardscripts\/([^/]+)$/u
       );
       if (scriptMatch && req.method === 'GET') {
         res.end(JSON.stringify({ Name: scriptMatch[1] }));
         return;
       }
       const ugMatch = pathname.match(
-        /^\/webadmin\/api\/v1\/usergroups\/([^/]+)$/,
+        /^\/webadmin\/api\/v1\/usergroups\/([^/]+)$/u
       );
       if (ugMatch && req.method === 'GET') {
         res.end(JSON.stringify({ Name: ugMatch[1] }));
         return;
       }
       const rgMatch = pathname.match(
-        /^\/webadmin\/api\/v1\/resourcegroups\/([^/]+)$/,
+        /^\/webadmin\/api\/v1\/resourcegroups\/([^/]+)$/u
       );
       if (rgMatch && req.method === 'GET') {
         res.end(JSON.stringify({ Name: rgMatch[1] }));
@@ -231,7 +231,7 @@ export function startFakeMoveit(): Promise<FakeMoveit> {
         }
       } else {
         const aclMatch = pathname.match(
-          /^\/webadmin\/api\/v1\/resourcegroups\/acls\/([^/]+)$/,
+          /^\/webadmin\/api\/v1\/resourcegroups\/acls\/([^/]+)$/u
         );
         if (aclMatch) {
           if (req.method === 'GET') {
@@ -254,7 +254,7 @@ export function startFakeMoveit(): Promise<FakeMoveit> {
       }
       res.statusCode = 404;
       res.end(JSON.stringify({ detail: 'Not found' }));
-    },
+    }
   );
   return new Promise((resolve) => {
     app.listen(0, '127.0.0.1', () => {

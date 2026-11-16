@@ -18,7 +18,7 @@ function tokenResponse(overrides: Record<string, unknown> = {}) {
       refresh_token: 'refresh-1',
       ...overrides,
     }),
-    { status: 200, headers: { 'Content-Type': 'application/json' } },
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
   );
 }
 
@@ -62,7 +62,7 @@ describe('TokenManager', () => {
     fetchMock.mockResolvedValueOnce(tokenResponse());
     const tm = new TokenManager(
       baseConfig,
-      fetchMock as unknown as typeof fetch,
+      fetchMock as unknown as typeof fetch
     );
 
     const token = await tm.getToken();
@@ -83,7 +83,7 @@ describe('TokenManager', () => {
     fetchMock.mockResolvedValueOnce(tokenResponse());
     const tm = new TokenManager(
       { ...baseConfig, serverHost: 'MOVEIT\\CORP' },
-      fetchMock as unknown as typeof fetch,
+      fetchMock as unknown as typeof fetch
     );
 
     await tm.getToken();
@@ -97,7 +97,7 @@ describe('TokenManager', () => {
     fetchMock.mockResolvedValue(tokenResponse());
     const tm = new TokenManager(
       baseConfig,
-      fetchMock as unknown as typeof fetch,
+      fetchMock as unknown as typeof fetch
     );
 
     const first = await tm.getToken();
@@ -113,11 +113,11 @@ describe('TokenManager', () => {
   it('uses a refresh grant when within 60s of expiry', async () => {
     fetchMock.mockResolvedValueOnce(tokenResponse({ expires_in: 30 }));
     fetchMock.mockResolvedValueOnce(
-      tokenResponse({ access_token: 'access-2', refresh_token: 'refresh-2' }),
+      tokenResponse({ access_token: 'access-2', refresh_token: 'refresh-2' })
     );
     const tm = new TokenManager(
       baseConfig,
-      fetchMock as unknown as typeof fetch,
+      fetchMock as unknown as typeof fetch
     );
 
     const first = await tm.getToken();
@@ -138,11 +138,11 @@ describe('TokenManager', () => {
   it('falls back to a password grant after invalidate()', async () => {
     fetchMock.mockResolvedValueOnce(tokenResponse());
     fetchMock.mockResolvedValueOnce(
-      tokenResponse({ access_token: 'access-2' }),
+      tokenResponse({ access_token: 'access-2' })
     );
     const tm = new TokenManager(
       baseConfig,
-      fetchMock as unknown as typeof fetch,
+      fetchMock as unknown as typeof fetch
     );
 
     await tm.getToken();
@@ -163,12 +163,12 @@ describe('TokenManager', () => {
           error: 'invalid_grant',
           error_description: description,
         }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } },
-      ),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      )
     );
     const tm = new TokenManager(
       baseConfig,
-      fetchMock as unknown as typeof fetch,
+      fetchMock as unknown as typeof fetch
     );
 
     await expect(tm.getToken()).rejects.toThrow(description);
@@ -187,7 +187,7 @@ describe('TokenManager', () => {
     fetchMock.mockResolvedValueOnce(okResponse());
     const tm = new TokenManager(
       baseConfig,
-      fetchMock as unknown as typeof fetch,
+      fetchMock as unknown as typeof fetch
     );
 
     await tm.getToken();
@@ -203,7 +203,7 @@ describe('TokenManager', () => {
     fetchMock.mockResolvedValue(tokenResponse());
     const tm = new TokenManager(
       baseConfig,
-      fetchMock as unknown as typeof fetch,
+      fetchMock as unknown as typeof fetch
     );
 
     await tm.revoke();
@@ -218,8 +218,8 @@ describe('TokenManager', () => {
       () =>
         new TokenManager(
           { ...baseConfig, tlsRejectUnauthorized: false },
-          fetchMock as unknown as typeof fetch,
-        ),
+          fetchMock as unknown as typeof fetch
+        )
     ).not.toThrow();
   });
 });
@@ -227,13 +227,13 @@ describe('TokenManager', () => {
 describe('dispatcher passthrough', () => {
   it('passes the dispatcher on every fetch RequestInit', async () => {
     const fetchMock = vi.fn(async (..._args: [unknown, RequestInit?]) =>
-      tokenResponse(),
+      tokenResponse()
     );
     const sentinel = { __sentinel: true };
     const tm = new TokenManager(
       baseConfig,
       fetchMock as unknown as typeof fetch,
-      { dispatcher: sentinel },
+      { dispatcher: sentinel }
     );
 
     await tm.getToken();
@@ -242,7 +242,7 @@ describe('dispatcher passthrough', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
     for (const call of fetchMock.mock.calls) {
       expect((call[1] as Record<string, unknown> | undefined)?.dispatcher).toBe(
-        sentinel,
+        sentinel
       );
     }
   });
@@ -255,11 +255,11 @@ describe('private-IP redaction in token errors', () => {
         new Response(JSON.stringify(body), {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
-        }),
+        })
     );
     const tm = new TokenManager(
       baseConfig,
-      fetchMock as unknown as typeof fetch,
+      fetchMock as unknown as typeof fetch
     );
     return (await tm.getToken().catch((e: unknown) => e)) as Error;
   }
@@ -271,7 +271,7 @@ describe('private-IP redaction in token errors', () => {
         'Failed to authenticate with MOVEit Automation server at host 10.0.24.56',
     });
     expect(err.message).toBe(
-      'Failed to authenticate with MOVEit Automation server at host [redacted-ip]',
+      'Failed to authenticate with MOVEit Automation server at host [redacted-ip]'
     );
   });
 

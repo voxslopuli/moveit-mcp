@@ -6,7 +6,7 @@ import { jsonResult } from './util.js';
 
 export function registerMoveitGlobalParameters(
   server: McpServer,
-  client: MoveitClient,
+  client: MoveitClient
 ): void {
   server.registerTool(
     'moveit_list_global_parameters',
@@ -15,7 +15,7 @@ export function registerMoveitGlobalParameters(
         'List MOVEit Transfer global system parameters (server settings) with optional pagination.',
       inputSchema: ListParamsSchema,
     },
-    async (args) => jsonResult(await client.list('globalparameters', args)),
+    async (args) => jsonResult(await client.list('globalparameters', args))
   );
 
   server.registerTool(
@@ -25,6 +25,6 @@ export function registerMoveitGlobalParameters(
         'Get a single MOVEit Transfer global parameter by its exact name.',
       inputSchema: z.object({ name: z.string().min(1) }),
     },
-    async ({ name }) => jsonResult(await client.get('globalparameters', name)),
+    async ({ name }) => jsonResult(await client.get('globalparameters', name))
   );
 }

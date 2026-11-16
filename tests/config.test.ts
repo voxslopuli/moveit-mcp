@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, it as test } from 'vitest';
 import { ConfigError, loadConfig } from '../src/config.js';
 
 const validEnv = {
@@ -22,22 +22,22 @@ describe('loadConfig', () => {
   it('sets tlsRejectUnauthorized=false only for case-insensitive "false"', () => {
     expect(
       loadConfig({ ...validEnv, MOVEIT_TLS_REJECT_UNAUTHORIZED: 'false' })
-        .tlsRejectUnauthorized,
+        .tlsRejectUnauthorized
     ).toBe(false);
     expect(
       loadConfig({ ...validEnv, MOVEIT_TLS_REJECT_UNAUTHORIZED: 'FALSE' })
-        .tlsRejectUnauthorized,
+        .tlsRejectUnauthorized
     ).toBe(false);
   });
 
   it('defaults tlsRejectUnauthorized=true for other values', () => {
     expect(
       loadConfig({ ...validEnv, MOVEIT_TLS_REJECT_UNAUTHORIZED: 'true' })
-        .tlsRejectUnauthorized,
+        .tlsRejectUnauthorized
     ).toBe(true);
     expect(
       loadConfig({ ...validEnv, MOVEIT_TLS_REJECT_UNAUTHORIZED: '0' })
-        .tlsRejectUnauthorized,
+        .tlsRejectUnauthorized
     ).toBe(true);
     expect(loadConfig({ ...validEnv }).tlsRejectUnauthorized).toBe(true);
   });
@@ -45,7 +45,7 @@ describe('loadConfig', () => {
   it('throws naming all missing vars', () => {
     expect(() => loadConfig({})).toThrow(ConfigError);
     expect(() => loadConfig({})).toThrow(
-      /Missing required environment variables: MOVEIT_BASE_URL, MOVEIT_USERNAME, MOVEIT_PASSWORD/,
+      /Missing required environment variables: MOVEIT_BASE_URL, MOVEIT_USERNAME, MOVEIT_PASSWORD/u
     );
   });
 
@@ -54,13 +54,13 @@ describe('loadConfig', () => {
       loadConfig({
         ...validEnv,
         MOVEIT_BASE_URL: 'https://moveit.example.com/',
-      }).baseUrl,
+      }).baseUrl
     ).toBe('https://moveit.example.com');
   });
 
   it('names only the missing BASE_URL when others present', () => {
     expect(() =>
-      loadConfig({ MOVEIT_USERNAME: 'u', MOVEIT_PASSWORD: 'p' }),
+      loadConfig({ MOVEIT_USERNAME: 'u', MOVEIT_PASSWORD: 'p' })
     ).toThrow('Missing required environment variables: MOVEIT_BASE_URL');
   });
 
@@ -73,32 +73,31 @@ describe('loadConfig', () => {
   });
 });
 
-it('strips a trailing /api/v1 suffix case-insensitively', () => {
+test('strips a trailing /api/v1 suffix case-insensitively', () => {
   expect(
     loadConfig({
       ...validEnv,
       MOVEIT_BASE_URL: 'https://moveit.cnyric.org/api/v1',
-    }).baseUrl,
+    }).baseUrl
   ).toBe('https://moveit.cnyric.org');
   expect(
     loadConfig({
       ...validEnv,
       MOVEIT_BASE_URL: 'https://moveit.cnyric.org/api/v1/',
-    }).baseUrl,
+    }).baseUrl
   ).toBe('https://moveit.cnyric.org');
   expect(
-    loadConfig({ ...validEnv, MOVEIT_BASE_URL: 'https://x.org/API/V1' })
-      .baseUrl,
+    loadConfig({ ...validEnv, MOVEIT_BASE_URL: 'https://x.org/API/V1' }).baseUrl
   ).toBe('https://x.org');
 });
 
-it('keeps a /webadmin suffix on baseUrl', () => {
+test('keeps a /webadmin suffix on baseUrl', () => {
   expect(
     loadConfig({ ...validEnv, MOVEIT_BASE_URL: 'https://host/webadmin' })
-      .baseUrl,
+      .baseUrl
   ).toBe('https://host/webadmin');
   expect(
-    loadConfig({ ...validEnv, MOVEIT_BASE_URL: 'https://host' }).baseUrl,
+    loadConfig({ ...validEnv, MOVEIT_BASE_URL: 'https://host' }).baseUrl
   ).toBe('https://host');
 });
 
@@ -106,7 +105,7 @@ describe('MOVEIT_CA_FILE', () => {
   it('sets caFile when MOVEIT_CA_FILE is present', () => {
     expect(
       loadConfig({ ...validEnv, MOVEIT_CA_FILE: '/etc/ssl/moveit-ca.pem' })
-        .caFile,
+        .caFile
     ).toBe('/etc/ssl/moveit-ca.pem');
   });
 

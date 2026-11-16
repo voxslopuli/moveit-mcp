@@ -39,5 +39,5 @@ export const IdParamsSchema = z.object({ id: z.string().min(1) });
 export const ReportQuerySchema = z.object({
   predicate: z.string().min(1),
   orderBy: z.string().optional(),
-  maxCount: z.number().int().positive().max(10000).optional(),
+  maxCount: z.number().int().positive().max(10_000).optional(),
 });

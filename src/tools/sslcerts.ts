@@ -6,7 +6,7 @@ import { jsonResult } from './util.js';
 
 export function registerMoveitSslCerts(
   server: McpServer,
-  client: MoveitClient,
+  client: MoveitClient
 ): void {
   server.registerTool(
     'moveit_list_ssl_certificates',
@@ -15,7 +15,7 @@ export function registerMoveitSslCerts(
         'List SSL certificates trusted by MOVEit Automation, with pagination.',
       inputSchema: PagedListParamsSchema,
     },
-    async (args) => jsonResult(await client.listSSLCerts(args)),
+    async (args) => jsonResult(await client.listSSLCerts(args))
   );
 
   server.registerTool(
@@ -25,6 +25,6 @@ export function registerMoveitSslCerts(
         'Get a single SSL certificate by its SHA-1 certificate thumbprint.',
       inputSchema: z.object({ thumbprint: z.string().min(1) }),
     },
-    async ({ thumbprint }) => jsonResult(await client.getSSLCert(thumbprint)),
+    async ({ thumbprint }) => jsonResult(await client.getSSLCert(thumbprint))
   );
 }

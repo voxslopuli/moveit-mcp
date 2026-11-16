@@ -52,7 +52,7 @@ describe('createServer', () => {
     const names = tools.tools.map((t) => t.name).sort();
     expect(names.length).toBe(EXPECTED_TOOLS.length);
     expect(names).toEqual([...EXPECTED_TOOLS].sort());
-    expect(names.every((n) => /^moveit_/.test(n))).toBe(true);
+    expect(names.every((n) => /^moveit_/u.test(n))).toBe(true);
   });
 
   it('registers 49 group tools (resources 20, access 7) plus 3 meta tools', async () => {
@@ -103,7 +103,7 @@ describe('createServer', () => {
         'moveit_get_resource_group',
       ]
         .sort()
-        .join(','),
+        .join(',')
     );
     expect(byName.access.tools).toHaveLength(7);
     expect([...byName.access.tools].sort().join(',')).toBe(
@@ -117,11 +117,11 @@ describe('createServer', () => {
         'moveit_delete_acl',
       ]
         .sort()
-        .join(','),
+        .join(',')
     );
     const groupToolTotal = parsed.groups.reduce(
       (sum, g) => sum + g.tools.length,
-      0,
+      0
     );
     expect(groupToolTotal).toBe(49);
     expect(parsed.groups.filter((g) => g.enabled).map((g) => g.name)).toEqual([
@@ -146,7 +146,7 @@ describe('runMain', () => {
       'fetch',
       vi.fn(async () => {
         throw new Error('fetch must not be called before transport');
-      }),
+      })
     );
   });
   afterEach(() => {
@@ -156,10 +156,10 @@ describe('runMain', () => {
 
   it('throws ConfigError naming missing vars before any fetch', async () => {
     await expect(runMain({ MOVEIT_BASE_URL: 'https://x' })).rejects.toThrow(
-      ConfigError,
+      ConfigError
     );
     await expect(runMain({})).rejects.toThrow(
-      /MOVEIT_BASE_URL, MOVEIT_USERNAME, MOVEIT_PASSWORD/,
+      /MOVEIT_BASE_URL, MOVEIT_USERNAME, MOVEIT_PASSWORD/u
     );
     expect(vi.mocked(fetch)).not.toHaveBeenCalled();
   });
@@ -172,15 +172,17 @@ describe('main', () => {
 
   it('exits with code 1 on ConfigError', async () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(((
-      code: number,
+      code: number
     ) => {
       throw new Error(`exit:${code}`);
     }) as never);
-    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {
+      // silence stderr
+    });
     await expect(main()).rejects.toThrow('exit:1');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(errSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Missing required environment variables'),
+      expect.stringContaining('Missing required environment variables')
     );
   });
 });
@@ -189,13 +191,14 @@ describe('createServer with MOVEIT_CA_FILE', () => {
   it('throws ConfigError naming MOVEIT_CA_FILE when the CA file is missing', () => {
     const missing = '/nonexistent/moveit-ca-bundle.pem';
     expect(() => createServer({ ...validConfig, caFile: missing })).toThrow(
-      ConfigError,
+      ConfigError
     );
     expect(() => createServer({ ...validConfig, caFile: missing })).toThrow(
-      /MOVEIT_CA_FILE/,
+      /MOVEIT_CA_FILE/u
     );
     expect(() => createServer({ ...validConfig, caFile: missing })).toThrow(
-      new RegExp(missing.replace(/[/.]/g, '\\$&')),
+      // biome-ignore lint/style/useUnicodeRegex: v-flag regex requires an ES2024 target
+      new RegExp(missing.replace(/[/.]/gu, '\\$&'))
     );
   });
 });

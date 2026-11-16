@@ -4,10 +4,10 @@ import { describe, expect, it, vi } from 'vitest';
 import type { MoveitClient } from '../../src/client.js';
 import { registerMoveitConfig } from '../../src/tools/config.js';
 
-type StubClient = {
+interface StubClient {
   getConfig: ReturnType<typeof vi.fn>;
   putConfig: ReturnType<typeof vi.fn>;
-};
+}
 
 function makeStub(): StubClient {
   return {
@@ -32,7 +32,7 @@ async function connect(stub: StubClient) {
 async function call(
   name: string,
   args: Record<string, unknown>,
-  stub: StubClient,
+  stub: StubClient
 ) {
   const { client } = await connect(stub);
   return (await client.callTool({ name, arguments: args })) as {
@@ -82,10 +82,10 @@ describe('moveit config tools', () => {
 });
 
 describe('config v2 export/import tools', () => {
-  type V2Stub = {
+  interface V2Stub {
     exportConfigV2: ReturnType<typeof vi.fn>;
     importConfigV2: ReturnType<typeof vi.fn>;
-  };
+  }
 
   function makeV2Stub(): V2Stub {
     return { exportConfigV2: vi.fn(), importConfigV2: vi.fn() };
@@ -94,7 +94,7 @@ describe('config v2 export/import tools', () => {
   async function callV2(
     name: string,
     args: Record<string, unknown>,
-    stub: V2Stub,
+    stub: V2Stub
   ) {
     const server = new McpServer({ name: 'test-server', version: '0.0.0' });
     registerMoveitConfig(server, stub as unknown as MoveitClient);
@@ -122,7 +122,7 @@ describe('config v2 export/import tools', () => {
     const result = await callV2(
       'moveit_export_config_v2',
       { passphrase: 'pw', sanitize: true },
-      stub,
+      stub
     );
     expect(stub.exportConfigV2).toHaveBeenCalledWith({
       passphrase: 'pw',
@@ -143,7 +143,7 @@ describe('config v2 export/import tools', () => {
   it('moveit_export_config_v2 description contrasts portable and sanitized export', async () => {
     const tools = await v2Tools(makeV2Stub());
     const desc = tools.find(
-      (t) => t.name === 'moveit_export_config_v2',
+      (t) => t.name === 'moveit_export_config_v2'
     )?.description;
     expect(desc).toContain('2019.1+');
     expect(desc).toContain('passphrase');
@@ -156,7 +156,7 @@ describe('config v2 export/import tools', () => {
     const result = await callV2(
       'moveit_import_config_v2',
       { configXML: '<config/>', passphrase: 'pw' },
-      stub,
+      stub
     );
     expect(stub.importConfigV2).toHaveBeenCalledWith('<config/>', 'pw');
     expect(JSON.parse(result.content[0].text)).toEqual({
@@ -169,13 +169,13 @@ describe('config v2 export/import tools', () => {
     const r1 = await callV2(
       'moveit_import_config_v2',
       { configXML: '', passphrase: 'pw' },
-      stub,
+      stub
     );
     expect(r1.isError).toBe(true);
     const r2 = await callV2(
       'moveit_import_config_v2',
       { configXML: '<config/>', passphrase: '' },
-      stub,
+      stub
     );
     expect(r2.isError).toBe(true);
     expect(stub.importConfigV2).not.toHaveBeenCalled();
@@ -184,9 +184,9 @@ describe('config v2 export/import tools', () => {
   it('moveit_import_config_v2 description marks destructive and pairs with export', async () => {
     const tools = await v2Tools(makeV2Stub());
     const desc = tools.find(
-      (t) => t.name === 'moveit_import_config_v2',
+      (t) => t.name === 'moveit_import_config_v2'
     )?.description;
-    expect(desc).toMatch(/DESTRUCTIVE/i);
+    expect(desc).toMatch(/DESTRUCTIVE/iu);
     expect(desc).toContain('moveit_export_config_v2');
   });
 });

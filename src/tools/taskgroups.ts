@@ -6,7 +6,7 @@ import { jsonResult } from './util.js';
 
 export function registerMoveitTaskGroups(
   server: McpServer,
-  client: MoveitClient,
+  client: MoveitClient
 ): void {
   server.registerTool(
     'moveit_list_task_groups',
@@ -15,7 +15,7 @@ export function registerMoveitTaskGroups(
         'List MOVEit Transfer task groups with optional pagination and name filtering. (deprecated since 2019.1 — prefer resource groups)',
       inputSchema: ListParamsSchema,
     },
-    async (args) => jsonResult(await client.list('taskgroups', args)),
+    async (args) => jsonResult(await client.list('taskgroups', args))
   );
 
   server.registerTool(
@@ -26,6 +26,6 @@ export function registerMoveitTaskGroups(
       inputSchema: z.object({ taskGroupName: z.string().min(1) }),
     },
     async ({ taskGroupName }) =>
-      jsonResult(await client.get('taskgroups', taskGroupName)),
+      jsonResult(await client.get('taskgroups', taskGroupName))
   );
 }

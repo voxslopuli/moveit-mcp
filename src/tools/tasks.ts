@@ -6,7 +6,7 @@ import { jsonResult } from './util.js';
 
 export function registerMoveitTasks(
   server: McpServer,
-  client: MoveitClient,
+  client: MoveitClient
 ): void {
   server.registerTool(
     'moveit_list_tasks',
@@ -15,7 +15,7 @@ export function registerMoveitTasks(
         'List MOVEit Automation tasks with optional name search, field selection, and pagination.',
       inputSchema: ListParamsSchema,
     },
-    async (args) => jsonResult(await client.list('tasks', args)),
+    async (args) => jsonResult(await client.list('tasks', args))
   );
 
   server.registerTool(
@@ -24,7 +24,7 @@ export function registerMoveitTasks(
       description: 'Get a single MOVEit Automation task by its task ID.',
       inputSchema: z.object({ taskId: z.string().min(1) }),
     },
-    async ({ taskId }) => jsonResult(await client.get('tasks', taskId)),
+    async ({ taskId }) => jsonResult(await client.get('tasks', taskId))
   );
 
   server.registerTool(
@@ -33,7 +33,7 @@ export function registerMoveitTasks(
       description: 'List currently running MOVEit Automation task runs.',
       inputSchema: z.object({}),
     },
-    async () => jsonResult(await client.runningTasks()),
+    async () => jsonResult(await client.runningTasks())
   );
 
   server.registerTool(
@@ -47,7 +47,7 @@ export function registerMoveitTasks(
       }),
     },
     async ({ taskId, parameters }) =>
-      jsonResult(await client.startTask(taskId, parameters)),
+      jsonResult(await client.startTask(taskId, parameters))
   );
 
   server.registerTool(
@@ -57,7 +57,7 @@ export function registerMoveitTasks(
         'Stop a running MOVEit Automation task on the server (mutating action).',
       inputSchema: z.object({ taskId: z.string().min(1) }),
     },
-    async ({ taskId }) => jsonResult(await client.stopTask(taskId)),
+    async ({ taskId }) => jsonResult(await client.stopTask(taskId))
   );
 
   server.registerTool(
@@ -70,7 +70,7 @@ export function registerMoveitTasks(
     async ({ action }) => {
       await client.setScheduler(action);
       return jsonResult({ scheduler: action });
-    },
+    }
   );
   server.registerTool(
     'moveit_list_task_logs',
@@ -89,9 +89,9 @@ export function registerMoveitTasks(
       const { taskId, ...params } = args;
       const hasParams = Object.values(params).some((v) => v !== undefined);
       return jsonResult(
-        await client.listTaskLogs(taskId, hasParams ? params : undefined),
+        await client.listTaskLogs(taskId, hasParams ? params : undefined)
       );
-    },
+    }
   );
 
   server.registerTool(
@@ -105,7 +105,7 @@ export function registerMoveitTasks(
       }),
     },
     async ({ taskId, taskLogId }) =>
-      jsonResult(await client.getTaskLog(taskId, taskLogId)),
+      jsonResult(await client.getTaskLog(taskId, taskLogId))
   );
 
   server.registerTool(
@@ -115,7 +115,7 @@ export function registerMoveitTasks(
         'Force-kill a running task (2024.1+); use moveit_stop_task for graceful stop. Mutating action.',
       inputSchema: z.object({ taskId: z.string().min(1) }),
     },
-    async ({ taskId }) => jsonResult(await client.killTask(taskId)),
+    async ({ taskId }) => jsonResult(await client.killTask(taskId))
   );
 
   server.registerTool(
@@ -125,6 +125,6 @@ export function registerMoveitTasks(
         'Get the current status of the global MOVEit Automation scheduler (running or stopped). Requires MOVEit Automation 2020.1+ (404 on older servers).',
       inputSchema: z.object({}),
     },
-    async () => jsonResult(await client.getSchedulerStatus()),
+    async () => jsonResult(await client.getSchedulerStatus())
   );
 }

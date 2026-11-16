@@ -52,7 +52,7 @@ export class ToolRegistry {
           return (
             name: string,
             config: Parameters<McpServer['registerTool']>[1],
-            cb: Parameters<McpServer['registerTool']>[2],
+            cb: Parameters<McpServer['registerTool']>[2]
           ) => {
             const handle = target.registerTool(name, config, cb);
             handle.disable();
@@ -70,19 +70,27 @@ export class ToolRegistry {
   }
 
   enable(group: ToolGroup): void {
-    if (this.#active.has(group)) return;
-    for (const handle of this.#handles.get(group) ?? []) handle.enable();
+    if (this.#active.has(group)) {
+      return;
+    }
+    for (const handle of this.#handles.get(group) ?? []) {
+      handle.enable();
+    }
     this.#active.add(group);
   }
 
   disable(group: ToolGroup): void {
     if (group === 'info') {
       throw new Error(
-        `The '${group}' tool group cannot be disabled: it is always available.`,
+        `The '${group}' tool group cannot be disabled: it is always available.`
       );
     }
-    if (!this.#active.has(group)) return;
-    for (const handle of this.#handles.get(group) ?? []) handle.disable();
+    if (!this.#active.has(group)) {
+      return;
+    }
+    for (const handle of this.#handles.get(group) ?? []) {
+      handle.disable();
+    }
     this.#active.delete(group);
   }
 

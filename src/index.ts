@@ -30,10 +30,10 @@ import { registerMoveitTasks } from './tools/tasks.js';
 import { registerMoveitUserGroups } from './tools/usergroups.js';
 
 export interface MoveitMcpServer {
-  server: McpServer;
   client: MoveitClient;
+  server: McpServer;
+  shutdown: () => Promise<void>;
   tokenManager: TokenManager;
-  shutdown(): Promise<void>;
 }
 
 export interface ServerOptions {
@@ -45,16 +45,17 @@ export interface ServerOptions {
 
 export function createServer(
   cfg: Config,
-  opts?: ServerOptions,
+  opts?: ServerOptions
 ): MoveitMcpServer {
   let dispatcher = opts?.dispatcher;
   if (dispatcher === undefined && cfg.caFile !== undefined) {
     let ca: string;
     try {
       ca = readFileSync(cfg.caFile, 'utf8');
-    } catch {
+    } catch (err) {
       throw new ConfigError(
         `MOVEIT_CA_FILE: cannot read CA bundle file at ${cfg.caFile}`,
+        { cause: err }
       );
     }
     dispatcher = new Agent({ connect: { ca } });
@@ -76,10 +77,12 @@ export function createServer(
       ...registerFns: Array<(server: McpServer, client: MoveitClient) => void>
     ) =>
     (registryServer: McpServer) => {
-      for (const register of registerFns) register(registryServer, client);
+      for (const register of registerFns) {
+        register(registryServer, client);
+      }
     };
 
-  const groups: Array<[ToolGroup, (server: McpServer) => void]> = [
+  const groups: [ToolGroup, (server: McpServer) => void][] = [
     ['info', registerAll(registerMoveitInfo)],
     ['tasks', registerAll(registerMoveitTasks, registerMoveitTaskCrud)],
     ['reports', registerAll(registerMoveitReports)],
@@ -96,7 +99,7 @@ export function createServer(
         registerMoveitSshKeys,
         registerMoveitSslCerts,
         registerMoveitStandardScripts,
-        registerMoveitResourceGroups,
+        registerMoveitResourceGroups
       ),
     ],
     ['access', registerAll(registerMoveitUserGroups, registerMoveitAcls)],
@@ -113,7 +116,9 @@ export function createServer(
 
   let shuttingDown = false;
   const shutdown = async (): Promise<void> => {
-    if (shuttingDown) return;
+    if (shuttingDown) {
+      return;
+    }
     shuttingDown = true;
     await client.shutdown();
   };
@@ -122,7 +127,7 @@ export function createServer(
 }
 
 export async function runMain(
-  env: Record<string, string | undefined>,
+  env: Record<string, string | undefined>
 ): Promise<void> {
   const cfg = loadConfig(env);
   const { server, shutdown } = createServer(cfg);

@@ -6,7 +6,7 @@ import { jsonResult } from './util.js';
 
 export function registerMoveitPgpKeys(
   server: McpServer,
-  client: MoveitClient,
+  client: MoveitClient
 ): void {
   server.registerTool(
     'moveit_list_pgp_keys',
@@ -15,7 +15,7 @@ export function registerMoveitPgpKeys(
         'List OpenPGP keys known to MOVEit Automation, optionally filtered by key uid (user ID), with pagination.',
       inputSchema: PgpListParamsSchema,
     },
-    async (args) => jsonResult(await client.list('pgpkeys', args)),
+    async (args) => jsonResult(await client.list('pgpkeys', args))
   );
 
   server.registerTool(
@@ -24,6 +24,6 @@ export function registerMoveitPgpKeys(
       description: 'Get a single OpenPGP key by its PGP key ID.',
       inputSchema: z.object({ pGPKeyId: z.string().min(1) }),
     },
-    async ({ pGPKeyId }) => jsonResult(await client.get('pgpkeys', pGPKeyId)),
+    async ({ pGPKeyId }) => jsonResult(await client.get('pgpkeys', pGPKeyId))
   );
 }

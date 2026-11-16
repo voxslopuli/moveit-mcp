@@ -9,7 +9,7 @@ const NonEmptyRecord = z
 
 export function registerMoveitTaskCrud(
   server: McpServer,
-  client: MoveitClient,
+  client: MoveitClient
 ): void {
   server.registerTool(
     'moveit_create_task',
@@ -18,7 +18,7 @@ export function registerMoveitTaskCrud(
         'Create a new traditional task from a Task model JSON. Tip: model the JSON on a moveit_get_task result for a similar task.',
       inputSchema: z.object({ task: NonEmptyRecord }),
     },
-    async ({ task }) => jsonResult(await client.createTask(task)),
+    async ({ task }) => jsonResult(await client.createTask(task))
   );
 
   server.registerTool(
@@ -32,7 +32,7 @@ export function registerMoveitTaskCrud(
       }),
     },
     async ({ taskId, task }) =>
-      jsonResult(await client.updateTask(taskId, task)),
+      jsonResult(await client.updateTask(taskId, task))
   );
 
   server.registerTool(
@@ -44,6 +44,6 @@ export function registerMoveitTaskCrud(
     async ({ taskId }) => {
       await client.deleteTask(taskId);
       return jsonResult({ deleted: taskId });
-    },
+    }
   );
 }

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { MoveitApiError, MoveitClient } from '../src/client.js';
+import { MoveitApiError } from '../src/api-error.js';
+import { MoveitClient } from '../src/client.js';
 import type { Config } from '../src/config.js';
 import type { TokenManager } from '../src/token-manager.js';
 
@@ -11,8 +12,8 @@ const cfg: Config = {
 };
 
 interface QueuedResponse {
-  status: number;
   body: unknown;
+  status: number;
 }
 
 function jsonRes(status: number, body: unknown): Response {
@@ -55,7 +56,9 @@ describe('MoveitClient', () => {
     fetchMock = vi.fn(async (url: unknown, init?: RequestInit) => {
       calls.push({ url: String(url), init: init ?? {} });
       const next = queue.shift();
-      if (!next) throw new Error('fetch called with empty response queue');
+      if (!next) {
+        throw new Error('fetch called with empty response queue');
+      }
       return jsonRes(next.status, next.body);
     });
   });
@@ -84,7 +87,7 @@ describe('MoveitClient', () => {
     const { client } = makeClient(['tok1']);
     await client.list('hosts', { page: 1, perPage: 10, name: undefined });
     expect(calls[0].url).toBe(
-      'https://moveit.example.com/api/v1/hosts?page=1&perPage=10',
+      'https://moveit.example.com/api/v1/hosts?page=1&perPage=10'
     );
     expect(calls[0].init.method).toBe('GET');
   });
@@ -93,7 +96,7 @@ describe('MoveitClient', () => {
     const { client } = makeClient(['tok1']);
     await expect(client.list('users')).rejects.toThrow(Error);
     await expect(client.list('users')).rejects.not.toBeInstanceOf(
-      MoveitApiError,
+      MoveitApiError
     );
     expect(calls).toHaveLength(0);
   });
@@ -112,7 +115,7 @@ describe('MoveitClient', () => {
     await client.startTask('42', { comment: 'go' });
     expect(calls[0].init.method).toBe('POST');
     expect(calls[0].url).toBe(
-      'https://moveit.example.com/api/v1/tasks/42/start',
+      'https://moveit.example.com/api/v1/tasks/42/start'
     );
     const headers = new Headers(calls[0].init.headers);
     expect(headers.get('Content-Type')).toBe('application/json');
@@ -124,7 +127,7 @@ describe('MoveitClient', () => {
     const { client } = makeClient(['tok1']);
     await client.stopTask('42');
     expect(calls[0].url).toBe(
-      'https://moveit.example.com/api/v1/tasks/42/stop',
+      'https://moveit.example.com/api/v1/tasks/42/stop'
     );
   });
 
@@ -134,7 +137,7 @@ describe('MoveitClient', () => {
     await client.setScheduler('stop');
     expect(calls[0].init.method).toBe('PUT');
     expect(calls[0].url).toBe(
-      'https://moveit.example.com/api/v1/tasks/scheduler/stop',
+      'https://moveit.example.com/api/v1/tasks/scheduler/stop'
     );
   });
 
@@ -205,12 +208,12 @@ describe('MoveitClient', () => {
     });
     expect(calls[0].init.method).toBe('POST');
     expect(calls[0].url).toBe(
-      'https://moveit.example.com/api/v1/reports/audit',
+      'https://moveit.example.com/api/v1/reports/audit'
     );
     const headers = new Headers(calls[0].init.headers);
     expect(headers.get('Content-Type')).toBe('application/json');
     expect(calls[0].init.body).toBe(
-      '{"predicate":"FileName = \\"secret.txt\\"","orderBy":"Time","maxCount":100}',
+      '{"predicate":"FileName = \\"secret.txt\\"","orderBy":"Time","maxCount":100}'
     );
   });
 
@@ -225,7 +228,7 @@ describe('MoveitClient', () => {
     const result = await client.runningTasks();
     expect(calls[0].init.method).toBe('GET');
     expect(calls[0].url).toBe(
-      'https://moveit.example.com/api/v1/tasks/running',
+      'https://moveit.example.com/api/v1/tasks/running'
     );
     expect(result).toEqual([]);
   });
@@ -299,7 +302,7 @@ describe('MoveitClient', () => {
       });
       expect(calls[0].init.method).toBe('GET');
       expect(calls[0].url).toBe(
-        'https://moveit.example.com/api/v1/tasks/42/log?name=run1&fields=TaskLogID&page=2&perPage=10',
+        'https://moveit.example.com/api/v1/tasks/42/log?name=run1&fields=TaskLogID&page=2&perPage=10'
       );
     });
 
@@ -308,7 +311,7 @@ describe('MoveitClient', () => {
       const { client } = makeClient(['tok1']);
       await client.listTaskLogs('42');
       expect(calls[0].url).toBe(
-        'https://moveit.example.com/api/v1/tasks/42/log',
+        'https://moveit.example.com/api/v1/tasks/42/log'
       );
     });
 
@@ -318,7 +321,7 @@ describe('MoveitClient', () => {
       const log = await client.getTaskLog('42', '987');
       expect(calls[0].init.method).toBe('GET');
       expect(calls[0].url).toBe(
-        'https://moveit.example.com/api/v1/tasks/42/log/987',
+        'https://moveit.example.com/api/v1/tasks/42/log/987'
       );
       expect(log).toEqual({ LogData: 'hello' });
     });
@@ -329,7 +332,7 @@ describe('MoveitClient', () => {
       await client.killTask('42');
       expect(calls[0].init.method).toBe('POST');
       expect(calls[0].url).toBe(
-        'https://moveit.example.com/api/v1/tasks/42/kill',
+        'https://moveit.example.com/api/v1/tasks/42/kill'
       );
       expect(calls[0].init.body).toBeUndefined();
     });
@@ -340,7 +343,7 @@ describe('MoveitClient', () => {
       const status = await client.getSchedulerStatus();
       expect(calls[0].init.method).toBe('GET');
       expect(calls[0].url).toBe(
-        'https://moveit.example.com/api/v1/tasks/scheduler',
+        'https://moveit.example.com/api/v1/tasks/scheduler'
       );
       expect(status).toEqual({ Status: 'Stopped' });
     });
@@ -355,10 +358,10 @@ describe('MoveitClient', () => {
       });
       expect(calls[0].init.method).toBe('POST');
       expect(calls[0].url).toBe(
-        'https://moveit.example.com/api/v1/reports/export',
+        'https://moveit.example.com/api/v1/reports/export'
       );
       expect(calls[0].init.body).toBe(
-        '{"reportType":"taskruns","predicate":"Status=in=(\\"Success\\")","orderBy":"!StartTime","maxCount":50}',
+        '{"reportType":"taskruns","predicate":"Status=in=(\\"Success\\")","orderBy":"!StartTime","maxCount":50}'
       );
     });
 
@@ -380,7 +383,7 @@ describe('MoveitClient', () => {
       const result = await client.importConfigV2('<config/>', 'pw');
       expect(calls[0].init.method).toBe('POST');
       expect(calls[0].url).toBe(
-        'https://moveit.example.com/api/v1/config/import',
+        'https://moveit.example.com/api/v1/config/import'
       );
       expect(JSON.parse(String(calls[0].init.body))).toEqual({
         configXML: '<config/>',
@@ -397,7 +400,7 @@ describe('MoveitClient', () => {
       await client.listSSLCerts({ fields: 'Thumbprint', page: 1, perPage: 25 });
       expect(calls[0].init.method).toBe('GET');
       expect(calls[0].url).toBe(
-        'https://moveit.example.com/api/v1/sslcerts?fields=Thumbprint&page=1&perPage=25',
+        'https://moveit.example.com/api/v1/sslcerts?fields=Thumbprint&page=1&perPage=25'
       );
     });
 
@@ -414,7 +417,7 @@ describe('MoveitClient', () => {
       const cert = await client.getSSLCert('AB12');
       expect(calls[0].init.method).toBe('GET');
       expect(calls[0].url).toBe(
-        'https://moveit.example.com/api/v1/sslcerts/AB12',
+        'https://moveit.example.com/api/v1/sslcerts/AB12'
       );
       expect(cert).toEqual({ Thumbprint: 'AB12', Name: 'ca' });
     });
@@ -429,7 +432,7 @@ describe('MoveitClient', () => {
       });
       expect(calls[0].init.method).toBe('GET');
       expect(calls[0].url).toBe(
-        'https://moveit.example.com/api/v1/standardscripts?name=rotate&page=2&perPage=10',
+        'https://moveit.example.com/api/v1/standardscripts?name=rotate&page=2&perPage=10'
       );
     });
 
@@ -439,7 +442,7 @@ describe('MoveitClient', () => {
       const script = await client.getStandardScript('rotate');
       expect(calls[0].init.method).toBe('GET');
       expect(calls[0].url).toBe(
-        'https://moveit.example.com/api/v1/standardscripts/rotate',
+        'https://moveit.example.com/api/v1/standardscripts/rotate'
       );
       expect(script).toEqual({ Name: 'rotate' });
     });
@@ -450,7 +453,7 @@ describe('MoveitClient', () => {
       await client.listUserGroups({ name: 'admins' });
       expect(calls[0].init.method).toBe('GET');
       expect(calls[0].url).toBe(
-        'https://moveit.example.com/api/v1/usergroups?name=admins',
+        'https://moveit.example.com/api/v1/usergroups?name=admins'
       );
     });
 
@@ -460,7 +463,7 @@ describe('MoveitClient', () => {
       const group = await client.getUserGroup('admins');
       expect(calls[0].init.method).toBe('GET');
       expect(calls[0].url).toBe(
-        'https://moveit.example.com/api/v1/usergroups/admins',
+        'https://moveit.example.com/api/v1/usergroups/admins'
       );
       expect(group).toEqual({ Name: 'admins' });
     });
@@ -471,7 +474,7 @@ describe('MoveitClient', () => {
       await client.listResourceGroups({ page: 1, perPage: 50 });
       expect(calls[0].init.method).toBe('GET');
       expect(calls[0].url).toBe(
-        'https://moveit.example.com/api/v1/resourcegroups?page=1&perPage=50',
+        'https://moveit.example.com/api/v1/resourcegroups?page=1&perPage=50'
       );
     });
 
@@ -481,7 +484,7 @@ describe('MoveitClient', () => {
       const group = await client.getResourceGroup('reports');
       expect(calls[0].init.method).toBe('GET');
       expect(calls[0].url).toBe(
-        'https://moveit.example.com/api/v1/resourcegroups/reports',
+        'https://moveit.example.com/api/v1/resourcegroups/reports'
       );
       expect(group).toEqual({ Name: 'reports' });
     });
@@ -492,7 +495,7 @@ describe('MoveitClient', () => {
       await client.listACLs({ fields: 'ID', page: 1, perPage: 10 });
       expect(calls[0].init.method).toBe('GET');
       expect(calls[0].url).toBe(
-        'https://moveit.example.com/api/v1/resourcegroups/acls?fields=ID&page=1&perPage=10',
+        'https://moveit.example.com/api/v1/resourcegroups/acls?fields=ID&page=1&perPage=10'
       );
     });
 
@@ -502,7 +505,7 @@ describe('MoveitClient', () => {
       const acl = await client.getACL('99');
       expect(calls[0].init.method).toBe('GET');
       expect(calls[0].url).toBe(
-        'https://moveit.example.com/api/v1/resourcegroups/acls/99',
+        'https://moveit.example.com/api/v1/resourcegroups/acls/99'
       );
       expect(acl).toEqual({ ID: '99' });
     });
@@ -514,7 +517,7 @@ describe('MoveitClient', () => {
       await client.addACL(acl);
       expect(calls[0].init.method).toBe('POST');
       expect(calls[0].url).toBe(
-        'https://moveit.example.com/api/v1/resourcegroups/acls',
+        'https://moveit.example.com/api/v1/resourcegroups/acls'
       );
       expect(JSON.parse(String(calls[0].init.body))).toEqual(acl);
     });
@@ -526,7 +529,7 @@ describe('MoveitClient', () => {
       await client.updateACL('5', acl);
       expect(calls[0].init.method).toBe('PUT');
       expect(calls[0].url).toBe(
-        'https://moveit.example.com/api/v1/resourcegroups/acls/5',
+        'https://moveit.example.com/api/v1/resourcegroups/acls/5'
       );
       expect(JSON.parse(String(calls[0].init.body))).toEqual(acl);
     });
@@ -537,7 +540,7 @@ describe('MoveitClient', () => {
       const result = await client.deleteACL('5');
       expect(calls[0].init.method).toBe('DELETE');
       expect(calls[0].url).toBe(
-        'https://moveit.example.com/api/v1/resourcegroups/acls/5',
+        'https://moveit.example.com/api/v1/resourcegroups/acls/5'
       );
       expect(calls[0].init.body).toBeUndefined();
       expect(result).toBeNull();
@@ -564,7 +567,7 @@ describe('dispatcher passthrough', () => {
     await client.info();
     expect(calls).toHaveLength(1);
     expect((calls[0].init as Record<string, unknown>).dispatcher).toBe(
-      sentinel,
+      sentinel
     );
   });
 });
@@ -576,7 +579,7 @@ describe('private-IP redaction in API errors', () => {
         new Response(JSON.stringify(body), {
           status: 502,
           headers: { 'Content-Type': 'application/json' },
-        }),
+        })
     );
     const stub = stubTokenManager(['tok1']);
     const client = new MoveitClient(cfg, stub.tm as unknown as TokenManager, {
@@ -592,7 +595,7 @@ describe('private-IP redaction in API errors', () => {
     })) as MoveitApiError;
     expect(err).toBeInstanceOf(MoveitApiError);
     expect(err.message).toBe(
-      'Failed to authenticate with MOVEit Automation server at host [redacted-ip]',
+      'Failed to authenticate with MOVEit Automation server at host [redacted-ip]'
     );
   });
 

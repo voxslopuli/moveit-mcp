@@ -6,7 +6,7 @@ import { jsonResult } from './util.js';
 
 export function registerMoveitSshKeys(
   server: McpServer,
-  client: MoveitClient,
+  client: MoveitClient
 ): void {
   server.registerTool(
     'moveit_list_ssh_keys',
@@ -15,7 +15,7 @@ export function registerMoveitSshKeys(
         'List SSH client keys known to MOVEit Automation, with pagination and optional name filter.',
       inputSchema: ListParamsSchema,
     },
-    async (args) => jsonResult(await client.list('sshkeys', args)),
+    async (args) => jsonResult(await client.list('sshkeys', args))
   );
 
   server.registerTool(
@@ -24,6 +24,6 @@ export function registerMoveitSshKeys(
       description: 'Get a single SSH key by its SSH key ID (key name).',
       inputSchema: z.object({ sshKeyId: z.string().min(1) }),
     },
-    async ({ sshKeyId }) => jsonResult(await client.get('sshkeys', sshKeyId)),
+    async ({ sshKeyId }) => jsonResult(await client.get('sshkeys', sshKeyId))
   );
 }

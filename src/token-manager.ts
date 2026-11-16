@@ -3,9 +3,9 @@ import { redactPrivateIps } from './redact.js';
 
 interface TokenResponse {
   access_token: string;
-  token_type: string;
   expires_in: number;
   refresh_token: string;
+  token_type: string;
 }
 
 interface TokenError {
@@ -22,6 +22,22 @@ const REFRESH_MARGIN_MS = 60_000;
  * belongs to the HTTP client / entrypoint layer. This class never mutates
  * global agent state.
  */
+async function throwTokenError(res: Response): Promise<never> {
+  let message = `Token request failed with status ${res.status}`;
+  try {
+    const err = (await res.json()) as TokenError;
+    // Never include credential or token values in the message.
+    if (err.error_description) {
+      message = err.error_description;
+    } else if (err.error) {
+      message = err.error;
+    }
+  } catch {
+    // keep default status message
+  }
+  throw new Error(redactPrivateIps(message));
+}
+
 export class TokenManager {
   private readonly cfg: Config;
   private readonly fetchImpl: typeof fetch;
@@ -34,7 +50,7 @@ export class TokenManager {
   constructor(
     cfg: Config,
     fetchImpl: typeof fetch = fetch,
-    opts?: { dispatcher?: unknown },
+    opts?: { dispatcher?: unknown }
   ) {
     this.cfg = cfg;
     this.fetchImpl = fetchImpl;
@@ -43,7 +59,9 @@ export class TokenManager {
 
   /** fetch init with the optional undici dispatcher merged in. */
   private init(base: RequestInit): RequestInit {
-    if (this.dispatcher === undefined) return base;
+    if (this.dispatcher === undefined) {
+      return base;
+    }
     return { ...base, dispatcher: this.dispatcher } as RequestInit;
   }
 
@@ -76,7 +94,7 @@ export class TokenManager {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: body.toString(),
-      }),
+      })
     );
     if (!res.ok) {
       throw new Error(`Token revocation failed with status ${res.status}`);
@@ -97,7 +115,7 @@ export class TokenManager {
   }
 
   private async refresh(): Promise<void> {
-    const refreshToken = this.refreshToken;
+    const { refreshToken } = this;
     this.invalidate();
     const body = new URLSearchParams({
       grant_type: 'refresh_token',
@@ -113,30 +131,14 @@ export class TokenManager {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: body.toString(),
-      }),
+      })
     );
     if (!res.ok) {
-      await this.throwTokenError(res);
+      await throwTokenError(res);
     }
     const data = (await res.json()) as TokenResponse;
     this.accessToken = data.access_token;
     this.refreshToken = data.refresh_token;
     this.expiresAt = Date.now() + data.expires_in * 1000;
-  }
-
-  private async throwTokenError(res: Response): Promise<never> {
-    let message = `Token request failed with status ${res.status}`;
-    try {
-      const err = (await res.json()) as TokenError;
-      // Never include credential or token values in the message.
-      if (err.error_description) {
-        message = err.error_description;
-      } else if (err.error) {
-        message = err.error;
-      }
-    } catch {
-      // keep default status message
-    }
-    throw new Error(redactPrivateIps(message));
   }
 }

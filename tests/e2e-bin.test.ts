@@ -24,7 +24,7 @@ describe('bin launched via symlink', () => {
 
   it('exits 1 with a config error instead of exiting 0 silently', () => {
     const childEnv = Object.fromEntries(
-      Object.entries(parentEnv).filter(([k]) => !k.startsWith('MOVEIT_')),
+      Object.entries(parentEnv).filter(([k]) => !k.startsWith('MOVEIT_'))
     ) as Record<string, string>;
     const res = spawnSync('node', [link], { env: childEnv, encoding: 'utf8' });
     expect(res.status).toBe(1);

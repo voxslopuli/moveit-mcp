@@ -5,7 +5,7 @@
  */
 export function redactPrivateIps(text: string): string {
   return text.replace(
-    /\b(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b/g,
-    '[redacted-ip]',
+    /\b(?<ip>10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b/gu,
+    '[redacted-ip]'
   );
 }

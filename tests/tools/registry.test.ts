@@ -10,18 +10,18 @@ function makeRegister(names: string[]) {
       server.registerTool(
         name,
         { description: `${name} description` },
-        async () => ({ content: [{ type: 'text', text: name }] }),
+        async () => ({ content: [{ type: 'text', text: name }] })
       );
     }
   };
 }
 
 async function setup(
-  registerGroups: Array<[keyof typeof TOOL_GROUPS, string[]]> = [
+  registerGroups: [keyof typeof TOOL_GROUPS, string[]][] = [
     ['info', ['moveit_get_info']],
     ['tasks', ['moveit_list_tasks']],
     ['config', ['moveit_get_config']],
-  ],
+  ]
 ) {
   const server = new McpServer({ name: 'test-server', version: '0.0.0' });
   const registry = new ToolRegistry(server);
@@ -106,7 +106,7 @@ describe('ToolRegistry', () => {
     const { registry, client } = await setup();
     registry.enable('info');
     registry.enable('tasks');
-    expect(() => registry.disable('info')).toThrow(/info/);
+    expect(() => registry.disable('info')).toThrow(/info/u);
     expect(registry.enabledGroups()).toEqual(['info', 'tasks']);
     expect(await listedToolNames(client)).toContain('moveit_get_info');
   });
@@ -142,7 +142,7 @@ describe('meta tools', () => {
         'moveit_tools_disable',
         'moveit_tools_enable',
         'moveit_tools_list',
-      ].sort(),
+      ].sort()
     );
   });
 

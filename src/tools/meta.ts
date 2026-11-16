@@ -28,7 +28,7 @@ export function registerMoveitMeta(registry: ToolRegistry): void {
         'List moveit-mcp tool groups with their description, enabled flag, and tool names.',
       inputSchema: z.object({}),
     },
-    async () => {
+    () => {
       const enabled = new Set(registry.enabledGroups());
       return jsonResult({
         groups: TOOL_GROUP_NAMES.map((name) => ({
@@ -38,7 +38,7 @@ export function registerMoveitMeta(registry: ToolRegistry): void {
           tools: registry.toolNames(name),
         })),
       });
-    },
+    }
   );
 
   server.registerTool(
@@ -48,14 +48,16 @@ export function registerMoveitMeta(registry: ToolRegistry): void {
         'Enable one or more moveit-mcp tool groups, making their tools visible to the client.',
       inputSchema: GroupsInput,
     },
-    async ({ groups }) => {
+    ({ groups }) => {
       const before = new Set(registry.enabledGroups());
-      for (const group of groups) registry.enable(group);
+      for (const group of groups) {
+        registry.enable(group);
+      }
       return jsonResult({
         enabled: registry.enabledGroups(),
         added: groups.filter((group) => !before.has(group)),
       });
-    },
+    }
   );
 
   server.registerTool(
@@ -65,18 +67,20 @@ export function registerMoveitMeta(registry: ToolRegistry): void {
         'Disable one or more moveit-mcp tool groups, hiding their tools from the client. The info group cannot be disabled.',
       inputSchema: GroupsInput,
     },
-    async ({ groups }) => {
+    ({ groups }) => {
       if (groups.includes('info')) {
         throw new Error(
-          "The 'info' tool group cannot be disabled: it is always available.",
+          "The 'info' tool group cannot be disabled: it is always available."
         );
       }
       const before = new Set(registry.enabledGroups());
-      for (const group of groups) registry.disable(group);
+      for (const group of groups) {
+        registry.disable(group);
+      }
       return jsonResult({
         enabled: registry.enabledGroups(),
         removed: groups.filter((group) => before.has(group)),
       });
-    },
+    }
   );
 }
