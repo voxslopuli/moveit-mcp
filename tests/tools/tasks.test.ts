@@ -159,3 +159,109 @@ describe('moveit task tools', () => {
     }
   });
 });
+
+describe('moveit task log / kill / scheduler status tools', () => {
+  type LogStub = {
+    listTaskLogs: ReturnType<typeof vi.fn>;
+    getTaskLog: ReturnType<typeof vi.fn>;
+    killTask: ReturnType<typeof vi.fn>;
+    getSchedulerStatus: ReturnType<typeof vi.fn>;
+  };
+
+  function makeLogStub(): LogStub {
+    return {
+      listTaskLogs: vi.fn(),
+      getTaskLog: vi.fn(),
+      killTask: vi.fn(),
+      getSchedulerStatus: vi.fn(),
+    };
+  }
+
+  async function callLog(
+    name: string,
+    args: Record<string, unknown>,
+    stub: LogStub,
+  ) {
+    const server = new McpServer({ name: 'test-server', version: '0.0.0' });
+    registerMoveitTasks(server, stub as unknown as MoveitClient);
+    const client = new Client({ name: 'test-client', version: '0.0.0' });
+    const [ct, st] = InMemoryTransport.createLinkedPair();
+    await Promise.all([server.connect(st), client.connect(ct)]);
+    return (await client.callTool({ name, arguments: args })) as {
+      content: Array<{ type: string; text: string }>;
+      isError?: boolean;
+    };
+  }
+
+  async function logTools() {
+    const server = new McpServer({ name: 'test-server', version: '0.0.0' });
+    registerMoveitTasks(server, makeLogStub() as unknown as MoveitClient);
+    const client = new Client({ name: 'test-client', version: '0.0.0' });
+    const [ct, st] = InMemoryTransport.createLinkedPair();
+    await Promise.all([server.connect(st), client.connect(ct)]);
+    return (await client.listTools()).tools;
+  }
+
+  it('moveit_list_task_logs calls client.listTaskLogs with parsed params', async () => {
+    const stub = makeLogStub();
+    const fixture = { items: [{ TaskLogID: '987' }] };
+    stub.listTaskLogs.mockResolvedValue(fixture);
+    const result = await callLog(
+      'moveit_list_task_logs',
+      { taskId: '42', page: 1, perPage: 10, fields: 'TaskLogID' },
+      stub,
+    );
+    expect(stub.listTaskLogs).toHaveBeenCalledWith('42', {
+      page: 1,
+      perPage: 10,
+      fields: 'TaskLogID',
+    });
+    expect(JSON.parse(result.content[0].text)).toEqual(fixture);
+  });
+
+  it('moveit_list_task_logs without params passes undefined', async () => {
+    const stub = makeLogStub();
+    stub.listTaskLogs.mockResolvedValue({ items: [] });
+    await callLog('moveit_list_task_logs', { taskId: '42' }, stub);
+    expect(stub.listTaskLogs).toHaveBeenCalledWith('42', undefined);
+  });
+
+  it('moveit_get_task_log calls client.getTaskLog with both ids', async () => {
+    const stub = makeLogStub();
+    const fixture = { TaskLogID: '987', LogData: 'line1' };
+    stub.getTaskLog.mockResolvedValue(fixture);
+    const result = await callLog(
+      'moveit_get_task_log',
+      { taskId: '42', taskLogId: '987' },
+      stub,
+    );
+    expect(stub.getTaskLog).toHaveBeenCalledWith('42', '987');
+    expect(JSON.parse(result.content[0].text)).toEqual(fixture);
+  });
+
+  it('moveit_kill_task calls client.killTask and describes force kill', async () => {
+    const stub = makeLogStub();
+    stub.killTask.mockResolvedValue({ ok: true });
+    const result = await callLog('moveit_kill_task', { taskId: '42' }, stub);
+    expect(stub.killTask).toHaveBeenCalledWith('42');
+    expect(JSON.parse(result.content[0].text)).toEqual({ ok: true });
+    const tools = await logTools();
+    const desc = tools.find((t) => t.name === 'moveit_kill_task')?.description;
+    expect(desc).toMatch(/Force-kill/i);
+    expect(desc).toContain('moveit_stop_task');
+    expect(desc).toContain('2024.1+');
+  });
+
+  it('moveit_get_scheduler_status calls client.getSchedulerStatus', async () => {
+    const stub = makeLogStub();
+    const fixture = { Status: 'Stopped' };
+    stub.getSchedulerStatus.mockResolvedValue(fixture);
+    const result = await callLog('moveit_get_scheduler_status', {}, stub);
+    expect(stub.getSchedulerStatus).toHaveBeenCalledWith();
+    expect(JSON.parse(result.content[0].text)).toEqual(fixture);
+    const tools = await logTools();
+    expect(
+      tools.find((t) => t.name === 'moveit_get_scheduler_status')?.description,
+    ).toContain('2020.1+');
+  });
+});

@@ -124,3 +124,57 @@ describe('moveit report tools', () => {
     expect(stub.report).not.toHaveBeenCalled();
   });
 });
+
+describe('moveit_export_report tool', () => {
+  type ExportStub = { exportReport: ReturnType<typeof vi.fn> };
+
+  function makeExportStub(): ExportStub {
+    return { exportReport: vi.fn() };
+  }
+
+  async function callExport(args: Record<string, unknown>, stub: ExportStub) {
+    const server = new McpServer({ name: 'test-server', version: '0.0.0' });
+    registerMoveitReports(server, stub as unknown as MoveitClient);
+    const client = new Client({ name: 'test-client', version: '0.0.0' });
+    const [ct, st] = InMemoryTransport.createLinkedPair();
+    await Promise.all([server.connect(st), client.connect(ct)]);
+    return (await client.callTool({
+      name: 'moveit_export_report',
+      arguments: args,
+    })) as {
+      content: Array<{ type: string; text: string }>;
+      isError?: boolean;
+    };
+  }
+
+  it('routes kind and query to client.exportReport', async () => {
+    const stub = makeExportStub();
+    const fixture = { ID: 'export-1' };
+    stub.exportReport.mockResolvedValue(fixture);
+    const q = { predicate: 'Status=in=("Success")', orderBy: '!StartTime' };
+    const result = await callExport({ kind: 'taskruns', ...q }, stub);
+    expect(stub.exportReport).toHaveBeenCalledWith('taskruns', q);
+    expect(JSON.parse(result.content[0].text)).toEqual(fixture);
+  });
+
+  it('rejects an unknown kind without calling the client', async () => {
+    const stub = makeExportStub();
+    const result = await callExport({ kind: 'nope', predicate: 'x' }, stub);
+    expect(result.isError).toBe(true);
+    expect(stub.exportReport).not.toHaveBeenCalled();
+  });
+
+  it('description notes version requirement and export semantics', async () => {
+    const server = new McpServer({ name: 'test-server', version: '0.0.0' });
+    registerMoveitReports(server, makeExportStub() as unknown as MoveitClient);
+    const client = new Client({ name: 'test-client', version: '0.0.0' });
+    const [ct, st] = InMemoryTransport.createLinkedPair();
+    await Promise.all([server.connect(st), client.connect(ct)]);
+    const tools = await client.listTools();
+    const desc = tools.tools.find(
+      (t) => t.name === 'moveit_export_report',
+    )?.description;
+    expect(desc).toContain('2019.1+');
+    expect(desc).toMatch(/export/i);
+  });
+});

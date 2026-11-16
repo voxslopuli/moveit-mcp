@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/server';
+import { z } from 'zod/v4';
 import type { MoveitClient } from '../client.js';
 import { ReportQuerySchema } from '../schemas.js';
 import { jsonResult } from './util.js';
@@ -35,5 +36,20 @@ export function registerMoveitReports(
       inputSchema: ReportQuerySchema,
     },
     async (args) => jsonResult(await client.report('taskruns', args)),
+  );
+  server.registerTool(
+    'moveit_export_report',
+    {
+      description:
+        'Export a MOVEit Automation report (audit, fileactivity, or taskruns) using the same predicate/orderBy/maxCount query as the inline report tools, plus a reportType. Requires MOVEit Automation 2019.1+ (404 on older servers). Returns an exported report reference rather than inline report data.',
+      inputSchema: z.object({
+        kind: z.enum(['audit', 'fileactivity', 'taskruns']),
+        ...ReportQuerySchema.shape,
+      }),
+    },
+    async (args) => {
+      const { kind, ...q } = args;
+      return jsonResult(await client.exportReport(kind, q));
+    },
   );
 }

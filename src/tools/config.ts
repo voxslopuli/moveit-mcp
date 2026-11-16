@@ -30,4 +30,37 @@ export function registerMoveitConfig(
     },
     async ({ config }) => jsonResult(await client.putConfig(config)),
   );
+  server.registerTool(
+    'moveit_export_config_v2',
+    {
+      description:
+        'Export the MOVEit Automation configuration as XML using the config v2 API (2019.1+). Two modes: encrypted-with-passphrase (portable — secrets are encrypted with the given passphrase and can be imported elsewhere) or sanitized (secrets removed). Provide passphrase or sanitize: true. moveit_get_config is the deprecated server-key export.',
+      inputSchema: z
+        .object({
+          passphrase: z.string().min(1).optional(),
+          sanitize: z.boolean().optional(),
+        })
+        .refine((x) => !!(x.passphrase ?? x.sanitize), {
+          message: 'provide passphrase or sanitize',
+        }),
+    },
+    async ({ passphrase, sanitize }) =>
+      jsonResult(await client.exportConfigV2({ passphrase, sanitize })),
+  );
+
+  server.registerTool(
+    'moveit_import_config_v2',
+    {
+      description:
+        'DESTRUCTIVE: import a full MOVEit Automation configuration XML, replacing all existing configuration. Pair with moveit_export_config_v2 using a passphrase so encrypted secrets survive the round-trip. Requires MOVEit Automation 2019.1+.',
+      inputSchema: z.object({
+        configXML: z.string().min(1),
+        passphrase: z.string().min(1),
+      }),
+    },
+    async ({ configXML, passphrase }) => {
+      await client.importConfigV2(configXML, passphrase);
+      return jsonResult({ imported: true });
+    },
+  );
 }
