@@ -32,6 +32,8 @@ export const PgpListParamsSchema = z.object({
   uid: z.string().optional(),
 });
 
+export const PagedListParamsSchema = ListParamsSchema.omit({ name: true });
+
 export const IdParamsSchema = z.object({ id: z.string().min(1) });
 
 export const ReportQuerySchema = z.object({

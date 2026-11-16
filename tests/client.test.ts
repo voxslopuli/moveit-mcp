@@ -422,7 +422,11 @@ describe('MoveitClient', () => {
     it('listStandardScripts GETs /api/v1/standardscripts with name filter', async () => {
       queue.push({ status: 200, body: { items: [] } });
       const { client } = makeClient(['tok1']);
-      await client.listStandardScripts({ name: 'rotate', page: 2, perPage: 10 });
+      await client.listStandardScripts({
+        name: 'rotate',
+        page: 2,
+        perPage: 10,
+      });
       expect(calls[0].init.method).toBe('GET');
       expect(calls[0].url).toBe(
         'https://moveit.example.com/api/v1/standardscripts?name=rotate&page=2&perPage=10',
@@ -539,5 +543,4 @@ describe('MoveitClient', () => {
       expect(result).toBeNull();
     });
   });
-
 });

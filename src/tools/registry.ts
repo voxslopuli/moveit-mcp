@@ -11,8 +11,9 @@ export const TOOL_GROUPS = {
   reports: 'Audit, file activity, and task run reports.',
   config: 'System configuration get/put.',
   resources:
-    'Hosts, task groups, global parameters, custom scripts, date lists, PGP keys, and SSH keys.',
-  access: 'Access control tools (placeholder).',
+    'Hosts, task groups, resource groups, ACL reads, global parameters, custom scripts, date lists, PGP keys, SSH keys, SSL certs, and standard scripts.',
+  access:
+    'User groups and resource group ACL management (add/update/delete ACLs).',
 } as const;
 
 export type ToolGroup = keyof typeof TOOL_GROUPS;

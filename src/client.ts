@@ -260,10 +260,7 @@ export class MoveitClient {
   }
 
   async getSSLCert(sslCertificateThumbprint: string): Promise<unknown> {
-    return this.request(
-      'GET',
-      `/api/v1/sslcerts/${sslCertificateThumbprint}`,
-    );
+    return this.request('GET', `/api/v1/sslcerts/${sslCertificateThumbprint}`);
   }
 
   async listStandardScripts(params?: {
@@ -279,10 +276,7 @@ export class MoveitClient {
   }
 
   async getStandardScript(standardScriptId: string): Promise<unknown> {
-    return this.request(
-      'GET',
-      `/api/v1/standardscripts/${standardScriptId}`,
-    );
+    return this.request('GET', `/api/v1/standardscripts/${standardScriptId}`);
   }
 
   async listUserGroups(params?: {
@@ -351,5 +345,4 @@ export class MoveitClient {
     const qs = query.toString();
     return qs ? `?${qs}` : '';
   }
-
 }

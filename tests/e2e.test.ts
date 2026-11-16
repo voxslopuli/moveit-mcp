@@ -163,6 +163,124 @@ describe('stdio e2e smoke', () => {
     )[0].text;
     expect(JSON.parse(exportedText)).toEqual({ ExportedReportID: 'export-1' });
 
+    // resources and access groups are disabled by default; enable both
+    const enableNew = await client.callTool({
+      name: 'moveit_tools_enable',
+      arguments: { groups: ['resources', 'access'] },
+    });
+    const enableNewText = (
+      enableNew.content as Array<{ type: string; text: string }>
+    )[0].text;
+    expect(JSON.parse(enableNewText)).toEqual({
+      enabled: ['info', 'tasks', 'reports', 'config', 'resources', 'access'],
+      added: ['resources', 'access'],
+    });
+    expect((await client.listTools()).tools.length).toBe(52);
+
+    const sslCerts = await client.callTool({
+      name: 'moveit_list_ssl_certificates',
+    });
+    expect(
+      JSON.parse(
+        (sslCerts.content as Array<{ type: string; text: string }>)[0].text,
+      ).items,
+    ).toEqual([{ Thumbprint: 'AB12', Name: 'Root CA' }]);
+
+    const cert = await client.callTool({
+      name: 'moveit_get_ssl_certificate',
+      arguments: { thumbprint: 'AB12' },
+    });
+    expect(
+      JSON.parse(
+        (cert.content as Array<{ type: string; text: string }>)[0].text,
+      ),
+    ).toEqual({
+      Thumbprint: 'AB12',
+      Name: 'Root CA',
+    });
+
+    const scripts = await client.callTool({
+      name: 'moveit_get_standard_script',
+      arguments: { standardScriptId: 'pgp-encrypt' },
+    });
+    expect(
+      JSON.parse(
+        (scripts.content as Array<{ type: string; text: string }>)[0].text,
+      ),
+    ).toEqual({
+      Name: 'pgp-encrypt',
+    });
+
+    const userGroup = await client.callTool({
+      name: 'moveit_get_user_group',
+      arguments: { userGroupName: 'admins' },
+    });
+    expect(
+      JSON.parse(
+        (userGroup.content as Array<{ type: string; text: string }>)[0].text,
+      ),
+    ).toEqual({
+      Name: 'admins',
+    });
+
+    const resourceGroup = await client.callTool({
+      name: 'moveit_get_resource_group',
+      arguments: { resourceGroupName: 'reports' },
+    });
+    expect(
+      JSON.parse(
+        (resourceGroup.content as Array<{ type: string; text: string }>)[0]
+          .text,
+      ),
+    ).toEqual({
+      Name: 'reports',
+    });
+
+    const acls = await client.callTool({ name: 'moveit_list_acls' });
+    expect(
+      JSON.parse(
+        (acls.content as Array<{ type: string; text: string }>)[0].text,
+      ).items,
+    ).toEqual([{ ID: '5', Permission: 15 }]);
+
+    const addedAcl = await client.callTool({
+      name: 'moveit_add_acl',
+      arguments: { acl: { Type: 'usergroup', Permission: 15 } },
+    });
+    expect(
+      JSON.parse(
+        (addedAcl.content as Array<{ type: string; text: string }>)[0].text,
+      ),
+    ).toEqual({
+      Type: 'usergroup',
+      Permission: 15,
+    });
+
+    const updatedAcl = await client.callTool({
+      name: 'moveit_update_acl',
+      arguments: { aclId: '5', acl: { ID: '5', Permission: 7 } },
+    });
+    expect(
+      JSON.parse(
+        (updatedAcl.content as Array<{ type: string; text: string }>)[0].text,
+      ),
+    ).toEqual({
+      ID: '5',
+      Permission: 7,
+    });
+
+    const deletedAcl = await client.callTool({
+      name: 'moveit_delete_acl',
+      arguments: { aclId: '5' },
+    });
+    expect(
+      JSON.parse(
+        (deletedAcl.content as Array<{ type: string; text: string }>)[0].text,
+      ),
+    ).toEqual({
+      deleted: '5',
+    });
+
     expect(fake.seenBearer()).toBe(true);
   });
 });

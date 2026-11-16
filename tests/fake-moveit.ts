@@ -164,6 +164,94 @@ export function startFakeMoveit(): Promise<FakeMoveit> {
         });
         return;
       }
+      const catalogFixtures = {
+        '/webadmin/api/v1/sslcerts': {
+          paging: { page: 1, perPage: 25, total: 1 },
+          items: [{ Thumbprint: 'AB12', Name: 'Root CA' }],
+        },
+        '/webadmin/api/v1/standardscripts': {
+          paging: { page: 1, perPage: 25, total: 1 },
+          items: [{ Name: 'pgp-encrypt' }],
+        },
+        '/webadmin/api/v1/usergroups': {
+          paging: { page: 1, perPage: 25, total: 1 },
+          items: [{ Name: 'admins' }],
+        },
+        '/webadmin/api/v1/resourcegroups': {
+          paging: { page: 1, perPage: 25, total: 1 },
+          items: [{ Name: 'reports' }],
+        },
+        '/webadmin/api/v1/resourcegroups/acls': {
+          paging: { page: 1, perPage: 25, total: 1 },
+          items: [{ ID: '5', Permission: 15 }],
+        },
+      };
+      const catalog = catalogFixtures[pathname as keyof typeof catalogFixtures];
+      if (req.method === 'GET' && catalog) {
+        res.end(JSON.stringify(catalog));
+        return;
+      }
+      const certMatch = pathname.match(
+        /^\/webadmin\/api\/v1\/sslcerts\/([^/]+)$/,
+      );
+      if (certMatch && req.method === 'GET') {
+        res.end(JSON.stringify({ Thumbprint: certMatch[1], Name: 'Root CA' }));
+        return;
+      }
+      const scriptMatch = pathname.match(
+        /^\/webadmin\/api\/v1\/standardscripts\/([^/]+)$/,
+      );
+      if (scriptMatch && req.method === 'GET') {
+        res.end(JSON.stringify({ Name: scriptMatch[1] }));
+        return;
+      }
+      const ugMatch = pathname.match(
+        /^\/webadmin\/api\/v1\/usergroups\/([^/]+)$/,
+      );
+      if (ugMatch && req.method === 'GET') {
+        res.end(JSON.stringify({ Name: ugMatch[1] }));
+        return;
+      }
+      const rgMatch = pathname.match(
+        /^\/webadmin\/api\/v1\/resourcegroups\/([^/]+)$/,
+      );
+      if (rgMatch && req.method === 'GET') {
+        res.end(JSON.stringify({ Name: rgMatch[1] }));
+        return;
+      }
+      if (pathname === '/webadmin/api/v1/resourcegroups/acls') {
+        if (req.method === 'POST') {
+          let body = '';
+          req.on('data', (cbuf: Buffer) => (body += cbuf));
+          req.on('end', () => {
+            res.statusCode = 201;
+            res.end(body || '{}');
+          });
+          return;
+        }
+      } else {
+        const aclMatch = pathname.match(
+          /^\/webadmin\/api\/v1\/resourcegroups\/acls\/([^/]+)$/,
+        );
+        if (aclMatch) {
+          if (req.method === 'GET') {
+            res.end(JSON.stringify({ ID: aclMatch[1], Permission: 15 }));
+            return;
+          }
+          if (req.method === 'PUT') {
+            let body = '';
+            req.on('data', (cbuf: Buffer) => (body += cbuf));
+            req.on('end', () => {
+              res.end(body || '{}');
+            });
+            return;
+          }
+          if (req.method === 'DELETE') {
+            res.end(JSON.stringify({ deleted: aclMatch[1] }));
+            return;
+          }
+        }
+      }
       res.statusCode = 404;
       res.end(JSON.stringify({ detail: 'Not found' }));
     },

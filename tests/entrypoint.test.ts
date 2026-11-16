@@ -55,6 +55,82 @@ describe('createServer', () => {
     expect(names.every((n) => /^moveit_/.test(n))).toBe(true);
   });
 
+  it('registers 49 group tools (resources 20, access 7) plus 3 meta tools', async () => {
+    const srv = createServer(validConfig);
+    const client = new Client({ name: 'test-client', version: '0.0.0' });
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
+    await Promise.all([
+      srv.server.connect(serverTransport),
+      client.connect(clientTransport),
+    ]);
+    const result = (await client.callTool({
+      name: 'moveit_tools_list',
+      arguments: {},
+    })) as {
+      content: Array<{ type: string; text: string }>;
+    };
+    const parsed = JSON.parse(result.content[0].text) as {
+      groups: Array<{
+        name: string;
+        enabled: boolean;
+        tools: string[];
+      }>;
+    };
+    const byName = Object.fromEntries(parsed.groups.map((g) => [g.name, g]));
+    expect(byName.resources.tools).toHaveLength(20);
+    expect([...byName.resources.tools].sort().join(',')).toBe(
+      [
+        'moveit_list_hosts',
+        'moveit_get_host',
+        'moveit_list_task_groups',
+        'moveit_get_task_group',
+        'moveit_list_global_parameters',
+        'moveit_get_global_parameter',
+        'moveit_list_custom_scripts',
+        'moveit_get_custom_script',
+        'moveit_list_date_lists',
+        'moveit_get_date_list',
+        'moveit_list_pgp_keys',
+        'moveit_get_pgp_key',
+        'moveit_list_ssh_keys',
+        'moveit_get_ssh_key',
+        'moveit_list_ssl_certificates',
+        'moveit_get_ssl_certificate',
+        'moveit_list_standard_scripts',
+        'moveit_get_standard_script',
+        'moveit_list_resource_groups',
+        'moveit_get_resource_group',
+      ]
+        .sort()
+        .join(','),
+    );
+    expect(byName.access.tools).toHaveLength(7);
+    expect([...byName.access.tools].sort().join(',')).toBe(
+      [
+        'moveit_list_user_groups',
+        'moveit_get_user_group',
+        'moveit_list_acls',
+        'moveit_get_acl',
+        'moveit_add_acl',
+        'moveit_update_acl',
+        'moveit_delete_acl',
+      ]
+        .sort()
+        .join(','),
+    );
+    const groupToolTotal = parsed.groups.reduce(
+      (sum, g) => sum + g.tools.length,
+      0,
+    );
+    expect(groupToolTotal).toBe(49);
+    expect(parsed.groups.filter((g) => g.enabled).map((g) => g.name)).toEqual([
+      'info',
+      'tasks',
+      'reports',
+    ]);
+  });
+
   it('shutdown() calls client.shutdown() once; second call is a no-op', async () => {
     const srv = createServer(validConfig);
     const spy = vi.spyOn(srv.client, 'shutdown');

@@ -16,10 +16,17 @@ import { registerMoveitMeta } from './tools/meta.js';
 import { registerMoveitPgpKeys } from './tools/pgpkeys.js';
 import { type ToolGroup, ToolRegistry } from './tools/registry.js';
 import { registerMoveitReports } from './tools/reports.js';
+import {
+  registerMoveitAcls,
+  registerMoveitResourceGroups,
+} from './tools/resourcegroups.js';
 import { registerMoveitSshKeys } from './tools/sshkeys.js';
+import { registerMoveitSslCerts } from './tools/sslcerts.js';
+import { registerMoveitStandardScripts } from './tools/standardscripts.js';
 import { registerMoveitTaskCrud } from './tools/taskcrud.js';
 import { registerMoveitTaskGroups } from './tools/taskgroups.js';
 import { registerMoveitTasks } from './tools/tasks.js';
+import { registerMoveitUserGroups } from './tools/usergroups.js';
 
 export interface MoveitMcpServer {
   server: McpServer;
@@ -61,9 +68,12 @@ export function createServer(cfg: Config): MoveitMcpServer {
         registerMoveitDateLists,
         registerMoveitPgpKeys,
         registerMoveitSshKeys,
+        registerMoveitSslCerts,
+        registerMoveitStandardScripts,
+        registerMoveitResourceGroups,
       ),
     ],
-    ['access', () => {}],
+    ['access', registerAll(registerMoveitUserGroups, registerMoveitAcls)],
   ];
   for (const [group, register] of groups) {
     registry.registerGroup(group, register);
