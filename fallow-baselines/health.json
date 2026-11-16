@@ -1,0 +1,17 @@
+{
+  "kind": "health",
+  "finding_counts": {
+    "tests/fake-moveit.ts": {
+      "complexity_critical": {
+        "count": 1
+      },
+      "crap_critical": {
+        "count": 1
+      }
+    }
+  },
+  "runtime_coverage_findings": [],
+  "target_keys": [
+    "tests/fake-moveit.ts:complexity"
+  ]
+}

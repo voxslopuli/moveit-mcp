@@ -2,7 +2,15 @@
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "extends": ["ultracite/biome/core", "ultracite/biome/vitest"],
   "files": {
-    "includes": ["!node_modules", "!dist", "!docs", "!CHANGELOG.md"]
+    "includes": [
+      "!node_modules",
+      "!dist",
+      "!docs",
+      "!CHANGELOG.md",
+      "!.fallow",
+      "!.fallowrc.json",
+      "!fallow-baselines"
+    ]
   },
   "formatter": {
     "enabled": true,

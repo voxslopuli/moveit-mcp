@@ -1,0 +1,12 @@
+{
+  "kind": "dupes",
+  "clone_groups": [
+    "src/client.ts:213-220|src/client.ts:65-72|src/client.ts:98-105"
+  ],
+  "clone_fingerprints": [
+    "dup:d51c6b1f:3"
+  ],
+  "normalized_clone_fingerprints": [
+    "dup:f072a48d:3"
+  ]
+}
