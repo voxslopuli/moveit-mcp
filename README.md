@@ -1,6 +1,8 @@
-# moveit-mcp
+# @voxslopuli/moveit-mcp
 
 MCP server for MOVEit Automation REST API over stdio.
+
+Repo: https://github.com/voxslopuli/moveit-mcp
 
 ## Configuration
 

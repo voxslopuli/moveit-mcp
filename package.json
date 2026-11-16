@@ -1,5 +1,5 @@
 {
-  "name": "moveit-mcp",
+  "name": "@voxslopuli/moveit-mcp",
   "version": "0.1.0",
   "type": "module",
   "engines": {
@@ -32,5 +32,23 @@
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/voxslopuli/moveit-mcp.git"
+  },
+  "bugs": "https://github.com/voxslopuli/moveit-mcp/issues",
+  "homepage": "https://github.com/voxslopuli/moveit-mcp#readme",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "bin": {
+    "moveit-mcp": "dist/index.js"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
