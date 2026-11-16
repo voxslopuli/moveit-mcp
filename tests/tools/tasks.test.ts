@@ -154,7 +154,7 @@ describe('moveit task tools', () => {
       'moveit_set_scheduler',
     ]) {
       expect(
-        tools.find((t) => t.name === name)?.description.length,
+        tools.find((t) => t.name === name)?.description?.length,
       ).toBeGreaterThan(0);
     }
   });
