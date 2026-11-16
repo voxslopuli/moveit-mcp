@@ -187,4 +187,67 @@ export class MoveitClient {
     }
     throw new MoveitApiError(status, detail);
   }
+  async listTaskLogs(
+    taskId: string,
+    params?: {
+      name?: string;
+      fields?: string;
+      page?: number;
+      perPage?: number;
+    },
+  ): Promise<unknown> {
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(params ?? {})) {
+      if (value !== undefined) {
+        query.set(key, String(value));
+      }
+    }
+    const qs = query.toString();
+    return this.request(
+      'GET',
+      `/api/v1/tasks/${taskId}/log${qs ? `?${qs}` : ''}`,
+    );
+  }
+
+  async getTaskLog(taskId: string, taskLogId: string): Promise<unknown> {
+    return this.request('GET', `/api/v1/tasks/${taskId}/log/${taskLogId}`);
+  }
+
+  async killTask(taskId: string): Promise<unknown> {
+    return this.request('POST', `/api/v1/tasks/${taskId}/kill`);
+  }
+
+  async getSchedulerStatus(): Promise<unknown> {
+    return this.request('GET', '/api/v1/tasks/scheduler');
+  }
+
+  async exportReport(kind: ReportKind, q: ReportQuery): Promise<unknown> {
+    const body: Record<string, unknown> = {
+      reportType: kind,
+      predicate: q.predicate,
+    };
+    if (q.orderBy !== undefined) body.orderBy = q.orderBy;
+    if (q.maxCount !== undefined) body.maxCount = q.maxCount;
+    return this.request('POST', '/api/v1/reports/export', body);
+  }
+
+  async exportConfigV2(opts: {
+    passphrase?: string;
+    sanitize?: boolean;
+  }): Promise<unknown> {
+    const body: Record<string, unknown> = {};
+    if (opts.passphrase !== undefined) body.passphrase = opts.passphrase;
+    if (opts.sanitize !== undefined) body.sanitize = opts.sanitize;
+    return this.request('POST', '/api/v1/config', body);
+  }
+
+  async importConfigV2(
+    configXML: string,
+    passphrase: string,
+  ): Promise<unknown> {
+    return this.request('POST', '/api/v1/config/import', {
+      configXML,
+      passphrase,
+    });
+  }
 }

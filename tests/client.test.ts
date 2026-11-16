@@ -287,4 +287,106 @@ describe('MoveitClient', () => {
     expect(calls[0].init.body).toBeUndefined();
     expect(result).toBeNull();
   });
+  describe('task logs / kill / scheduler status / report export / config v2', () => {
+    it('listTaskLogs GETs /api/v1/tasks/{id}/log with query params', async () => {
+      queue.push({ status: 200, body: { items: [] } });
+      const { client } = makeClient(['tok1']);
+      await client.listTaskLogs('42', {
+        name: 'run1',
+        fields: 'TaskLogID',
+        page: 2,
+        perPage: 10,
+      });
+      expect(calls[0].init.method).toBe('GET');
+      expect(calls[0].url).toBe(
+        'https://moveit.example.com/api/v1/tasks/42/log?name=run1&fields=TaskLogID&page=2&perPage=10',
+      );
+    });
+
+    it('listTaskLogs without params has no query string', async () => {
+      queue.push({ status: 200, body: { items: [] } });
+      const { client } = makeClient(['tok1']);
+      await client.listTaskLogs('42');
+      expect(calls[0].url).toBe(
+        'https://moveit.example.com/api/v1/tasks/42/log',
+      );
+    });
+
+    it('getTaskLog GETs /api/v1/tasks/{id}/log/{logId}', async () => {
+      queue.push({ status: 200, body: { LogData: 'hello' } });
+      const { client } = makeClient(['tok1']);
+      const log = await client.getTaskLog('42', '987');
+      expect(calls[0].init.method).toBe('GET');
+      expect(calls[0].url).toBe(
+        'https://moveit.example.com/api/v1/tasks/42/log/987',
+      );
+      expect(log).toEqual({ LogData: 'hello' });
+    });
+
+    it('killTask POSTs to /api/v1/tasks/{id}/kill', async () => {
+      queue.push({ status: 200, body: { ok: true } });
+      const { client } = makeClient(['tok1']);
+      await client.killTask('42');
+      expect(calls[0].init.method).toBe('POST');
+      expect(calls[0].url).toBe(
+        'https://moveit.example.com/api/v1/tasks/42/kill',
+      );
+      expect(calls[0].init.body).toBeUndefined();
+    });
+
+    it('getSchedulerStatus GETs /api/v1/tasks/scheduler', async () => {
+      queue.push({ status: 200, body: { Status: 'Stopped' } });
+      const { client } = makeClient(['tok1']);
+      const status = await client.getSchedulerStatus();
+      expect(calls[0].init.method).toBe('GET');
+      expect(calls[0].url).toBe(
+        'https://moveit.example.com/api/v1/tasks/scheduler',
+      );
+      expect(status).toEqual({ Status: 'Stopped' });
+    });
+
+    it('exportReport POSTs reportType plus query to /api/v1/reports/export', async () => {
+      queue.push({ status: 200, body: { ID: 'r1' } });
+      const { client } = makeClient(['tok1']);
+      await client.exportReport('taskruns', {
+        predicate: 'Status=in=("Success")',
+        orderBy: '!StartTime',
+        maxCount: 50,
+      });
+      expect(calls[0].init.method).toBe('POST');
+      expect(calls[0].url).toBe(
+        'https://moveit.example.com/api/v1/reports/export',
+      );
+      expect(calls[0].init.body).toBe(
+        '{"reportType":"taskruns","predicate":"Status=in=(\\"Success\\")","orderBy":"!StartTime","maxCount":50}',
+      );
+    });
+
+    it('exportConfigV2 POSTs passphrase/sanitize to /api/v1/config', async () => {
+      queue.push({ status: 200, body: { configXML: '<config/>' } });
+      const { client } = makeClient(['tok1']);
+      await client.exportConfigV2({ passphrase: 'pw', sanitize: true });
+      expect(calls[0].init.method).toBe('POST');
+      expect(calls[0].url).toBe('https://moveit.example.com/api/v1/config');
+      expect(JSON.parse(String(calls[0].init.body))).toEqual({
+        passphrase: 'pw',
+        sanitize: true,
+      });
+    });
+
+    it('importConfigV2 POSTs configXML and passphrase to /api/v1/config/import', async () => {
+      queue.push({ status: 204, body: '' });
+      const { client } = makeClient(['tok1']);
+      const result = await client.importConfigV2('<config/>', 'pw');
+      expect(calls[0].init.method).toBe('POST');
+      expect(calls[0].url).toBe(
+        'https://moveit.example.com/api/v1/config/import',
+      );
+      expect(JSON.parse(String(calls[0].init.body))).toEqual({
+        configXML: '<config/>',
+        passphrase: 'pw',
+      });
+      expect(result).toBeNull();
+    });
+  });
 });
