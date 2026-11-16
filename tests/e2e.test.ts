@@ -37,7 +37,7 @@ describe('stdio e2e smoke', () => {
     await client.connect(transport);
 
     const tools = await client.listTools();
-    expect(tools.tools.length).toBe(16);
+    expect(tools.tools.length).toBe(21);
 
     const info = await client.callTool({ name: 'moveit_get_info' });
     const infoText = (info.content as Array<{ type: string; text: string }>)[0]
@@ -115,6 +115,53 @@ describe('stdio e2e smoke', () => {
     expect(JSON.parse(configText)).toEqual({
       Settings: { adminEmail: 'admin@example.com' },
     });
+
+    const exportedConfig = await client.callTool({
+      name: 'moveit_export_config_v2',
+      arguments: { passphrase: 'pw' },
+    });
+    const exportedConfigText = (
+      exportedConfig.content as Array<{ type: string; text: string }>
+    )[0].text;
+    expect(JSON.parse(exportedConfigText)).toEqual({ configXML: '<config/>' });
+
+    const importedConfig = await client.callTool({
+      name: 'moveit_import_config_v2',
+      arguments: { configXML: '<config/>', passphrase: 'pw' },
+    });
+    const importedConfigText = (
+      importedConfig.content as Array<{ type: string; text: string }>
+    )[0].text;
+    expect(JSON.parse(importedConfigText)).toEqual({ imported: true });
+
+    const taskLogs = await client.callTool({
+      name: 'moveit_list_task_logs',
+      arguments: { taskId: '226676691' },
+    });
+    const taskLogsText = (
+      taskLogs.content as Array<{ type: string; text: string }>
+    )[0].text;
+    expect(JSON.parse(taskLogsText)).toEqual({
+      paging: { page: 1, perPage: 25, total: 1 },
+      items: [{ TaskLogID: '987', Name: 'log-entry-1' }],
+    });
+
+    const schedulerStatus = await client.callTool({
+      name: 'moveit_get_scheduler_status',
+    });
+    const schedulerText = (
+      schedulerStatus.content as Array<{ type: string; text: string }>
+    )[0].text;
+    expect(JSON.parse(schedulerText)).toEqual({ Status: 'Stopped' });
+
+    const exported = await client.callTool({
+      name: 'moveit_export_report',
+      arguments: { kind: 'taskruns', predicate: 'Status=in=("Success")' },
+    });
+    const exportedText = (
+      exported.content as Array<{ type: string; text: string }>
+    )[0].text;
+    expect(JSON.parse(exportedText)).toEqual({ ExportedReportID: 'export-1' });
 
     expect(fake.seenBearer()).toBe(true);
   });

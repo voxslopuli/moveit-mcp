@@ -13,6 +13,7 @@ const validConfig: Config = {
 
 // Default-enabled groups (info, tasks, reports) plus the always-available
 // meta tools. config/resources groups register but stay disabled by default.
+// 21 visible: info 1 + tasks 13 + reports 4 + meta 3.
 const EXPECTED_TOOLS = [
   'moveit_get_info',
   'moveit_list_tasks',
@@ -24,9 +25,14 @@ const EXPECTED_TOOLS = [
   'moveit_create_task',
   'moveit_update_task',
   'moveit_delete_task',
+  'moveit_list_task_logs',
+  'moveit_get_task_log',
+  'moveit_kill_task',
+  'moveit_get_scheduler_status',
   'moveit_audit_report',
   'moveit_file_activity_report',
   'moveit_task_runs_report',
+  'moveit_export_report',
   'moveit_tools_list',
   'moveit_tools_enable',
   'moveit_tools_disable',

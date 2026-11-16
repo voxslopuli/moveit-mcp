@@ -80,6 +80,77 @@ export function startFakeMoveit(): Promise<FakeMoveit> {
           return;
         }
       }
+      {
+        const logMatch = pathname.match(
+          /^\/webadmin\/api\/v1\/tasks\/([^/]+)\/log$/,
+        );
+        if (logMatch && req.method === 'GET') {
+          res.end(
+            JSON.stringify({
+              paging: { page: 1, perPage: 25, total: 1 },
+              items: [{ TaskLogID: '987', Name: 'log-entry-1' }],
+            }),
+          );
+          return;
+        }
+        const logIdMatch = pathname.match(
+          /^\/webadmin\/api\/v1\/tasks\/([^/]+)\/log\/([^/]+)$/,
+        );
+        if (logIdMatch && req.method === 'GET') {
+          res.end(
+            JSON.stringify({
+              TaskLogID: logIdMatch[2],
+              LogData: 'line1\nline2',
+            }),
+          );
+          return;
+        }
+        const killMatch = pathname.match(
+          /^\/webadmin\/api\/v1\/tasks\/([^/]+)\/kill$/,
+        );
+        if (killMatch && req.method === 'POST') {
+          res.end(JSON.stringify({ killed: killMatch[1] }));
+          return;
+        }
+      }
+      if (
+        req.method === 'GET' &&
+        pathname === '/webadmin/api/v1/tasks/scheduler'
+      ) {
+        res.end(JSON.stringify({ Status: 'Stopped' }));
+        return;
+      }
+      if (
+        req.method === 'POST' &&
+        pathname === '/webadmin/api/v1/reports/export'
+      ) {
+        let body = '';
+        req.on('data', (c: Buffer) => (body += c));
+        req.on('end', () => {
+          res.end(JSON.stringify({ ExportedReportID: 'export-1' }));
+        });
+        return;
+      }
+      if (
+        req.method === 'POST' &&
+        pathname === '/webadmin/api/v1/config/import'
+      ) {
+        let body = '';
+        req.on('data', (c: Buffer) => (body += c));
+        req.on('end', () => {
+          res.statusCode = 204;
+          res.end();
+        });
+        return;
+      }
+      if (req.method === 'POST' && pathname === '/webadmin/api/v1/config') {
+        let body = '';
+        req.on('data', (c: Buffer) => (body += c));
+        req.on('end', () => {
+          res.end(JSON.stringify({ configXML: '<config/>' }));
+        });
+        return;
+      }
       const configFixture = { Settings: { adminEmail: 'admin@example.com' } };
       if (req.method === 'GET' && pathname === '/webadmin/api/v1/config') {
         res.end(JSON.stringify(configFixture));
