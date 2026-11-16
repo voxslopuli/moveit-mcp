@@ -1,15 +1,16 @@
 # @voxslopuli/moveit-mcp
 
-MCP server exposing the MOVEit Automation REST API over stdio — 24 tools for browsing configuration, controlling tasks and the scheduler, and running audit, file-activity, and task-runs reports.
+MCP server exposing the MOVEit Automation REST API over stdio — 29 tools for browsing configuration, controlling tasks and the scheduler, running audit, file-activity, and task-runs reports, and editing tasks and the configuration.
 
 [![CI](https://github.com/voxslopuli/moveit-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/voxslopuli/moveit-mcp/actions)
 [![npm](https://img.shields.io/npm/v/@voxslopuli/moveit-mcp)](https://www.npmjs.com/package/@voxslopuli/moveit-mcp)
 
 ## Features
 
-- 24 tools covering the MOVEit Automation REST API (`/api/v1`)
+- 29 tools covering the MOVEit Automation REST API (`/api/v1`)
 - Browse configuration objects: hosts, task groups, global parameters, custom scripts, date lists, PGP keys, SSH keys, tasks
 - Control task execution and scheduler: start/stop task runs (with optional task parameters), enable/disable the global scheduler
+- Edit tasks and configuration: create/update/delete tasks, export/import the full configuration (config import = full overwrite)
 - Web Admin-equivalent reports: audit (failed transfers), file activity (file/folder errors), task runs (completed runs)
 - OAuth token lifecycle handled transparently: automatic refresh, revocation on shutdown
 - Strict TLS by default; opt-out flag for self-signed certificates
@@ -134,11 +135,20 @@ Generic MCP client — any client that supports `mcpServers`:
 
 Pagination tools accept `page`, `perPage`, `fields`, and (where noted) a `name`/`uid` filter — all optional.
 
+> **Dangerous operations:** `moveit_put_config` (full config overwrite), `moveit_update_task` (full task replacement), and `moveit_delete_task` are destructive — get the current object before writing; there is no undo.
+
 ### Info
 
 | Tool              | Input | Description                            |
 | ----------------- | ----- | -------------------------------------- |
 | `moveit_get_info` | none  | Server info including product version. |
+
+### Config
+
+| Tool                   | Input                       | Description                                                                                           |
+| ---------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `moveit_get_config` 🔒 | none                        | Export the full configuration (`AdminConfigModel`). Admin-only read.                                  |
+| `moveit_put_config` ⚠️ | `config` (AdminConfigModel) | **DESTRUCTIVE:** import (full overwrite) of the entire configuration. Get first, modify, then import. |
 
 ### Hosts
 
@@ -200,6 +210,14 @@ Pagination tools accept `page`, `perPage`, `fields`, and (where noted) a `name`/
 | `moveit_stop_task` ⚠️       | `taskId`                                                 | **Mutating:** stop a running task.                 |
 | `moveit_set_scheduler` ⚠️   | `action`: `"start"` or `"stop"`                          | **Mutating:** start or stop the global scheduler.  |
 
+### Task CRUD
+
+| Tool                    | Input                              | Description                                                      |
+| ----------------------- | ---------------------------------- | ---------------------------------------------------------------- |
+| `moveit_create_task`    | `task` (Task model JSON)           | Create a new traditional task.                                   |
+| `moveit_update_task` ⚠️ | `taskId`, `task` (Task model JSON) | **DESTRUCTIVE:** replace a task — full replacement, not a merge. |
+| `moveit_delete_task` ⚠️ | `taskId`                           | **DESTRUCTIVE:** delete a task permanently.                      |
+
 ### Reports
 
 All report tools take `predicate` (required), optional `orderBy`, optional `maxCount` (positive integer, max 10000).
@@ -230,8 +248,10 @@ Example:
 
 ## Out of scope (v1)
 
-- Configuration export/import (`GET`/`PUT /api/v1/config`)
-- Task create/update/delete
+- SSH key / PGP key write operations (import/delete) — read-only today
+- Host management (create/update/delete hosts)
+- Schedule CRUD (date lists are readable only)
+- ASx host config editing (AS1/AS2/AS3 details beyond listing)
 
 ## Troubleshooting
 
