@@ -42,13 +42,13 @@ npm run build
 
 All configuration is via environment variables (see `.env.example`):
 
-| Variable                         | Required | Default | Description                                                                     |
-| -------------------------------- | -------- | ------- | ------------------------------------------------------------------------------- |
-| `MOVEIT_BASE_URL`                | yes      | —       | Web Admin base URL, **including the `/webadmin` suffix**                        |
-| `MOVEIT_USERNAME`                | yes      | —       | MOVEit account username                                                         |
-| `MOVEIT_PASSWORD`                | yes      | —       | MOVEit account password                                                         |
-| `MOVEIT_SERVER_HOST`             | no       | —       | Server hostname sent in the token request when different from the base URL host |
-| `MOVEIT_TLS_REJECT_UNAUTHORIZED` | no       | `true`  | Set `"false"` to accept self-signed certificates                                |
+| Variable                         | Required | Default | Description                                                                                                                                                                             |
+| -------------------------------- | -------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MOVEIT_BASE_URL`                | yes      | —       | Server root **without** `/api/v1` — e.g. `https://moveit.example.com` (API at host root) or `https://host/webadmin` (Web Admin-served). A trailing `/api/v1` is tolerated and stripped. |
+| `MOVEIT_USERNAME`                | yes      | —       | MOVEit account username                                                                                                                                                                 |
+| `MOVEIT_PASSWORD`                | yes      | —       | MOVEit account password                                                                                                                                                                 |
+| `MOVEIT_SERVER_HOST`             | no       | —       | Server hostname sent in the token request when different from the base URL host                                                                                                         |
+| `MOVEIT_TLS_REJECT_UNAUTHORIZED` | no       | `true`  | Set `"false"` to accept self-signed certificates                                                                                                                                        |
 
 Missing required variables fail startup with a list of what is missing.
 
@@ -75,7 +75,7 @@ Add the server to `~/.config/opencode/opencode.json` (global) or `.opencode/open
         "type": "local",
         "command": ["npx", "-y", "@voxslopuli/moveit-mcp"],
         "environment": {
-          "MOVEIT_BASE_URL": "https://moveit.example.com/webadmin",
+          "MOVEIT_BASE_URL": "https://moveit.example.com",
           "MOVEIT_USERNAME": "svc-account",
           "MOVEIT_PASSWORD": "changeme",
           "MOVEIT_TLS_REJECT_UNAUTHORIZED": "true"
@@ -99,7 +99,7 @@ Verify the connection with `opencode mcp list`. Set `"disabled": true` on a serv
       "command": "npx",
       "args": ["-y", "@voxslopuli/moveit-mcp"],
       "env": {
-        "MOVEIT_BASE_URL": "https://moveit.example.com/webadmin",
+        "MOVEIT_BASE_URL": "https://moveit.example.com",
         "MOVEIT_USERNAME": "svc-account",
         "MOVEIT_PASSWORD": "changeme",
         "MOVEIT_TLS_REJECT_UNAUTHORIZED": "true"
@@ -118,7 +118,7 @@ Generic MCP client — any client that supports `mcpServers`:
       "command": "npx",
       "args": ["-y", "@voxslopuli/moveit-mcp"],
       "env": {
-        "MOVEIT_BASE_URL": "https://moveit.example.com/webadmin",
+        "MOVEIT_BASE_URL": "https://moveit.example.com",
         "MOVEIT_USERNAME": "svc-account",
         "MOVEIT_PASSWORD": "changeme",
         "MOVEIT_SERVER_HOST": "",
@@ -129,7 +129,7 @@ Generic MCP client — any client that supports `mcpServers`:
 }
 ```
 
-> **`MOVEIT_BASE_URL` must include the `/webadmin` suffix** — the REST API lives under `https://<host>/webadmin/api/v1/`. A bare host URL like `https://moveit.example.com` will fail authentication.
+> **`MOVEIT_BASE_URL` is the server root WITHOUT `/api/v1`** — deployments serve the API at different roots: some at `https://<host>/api/v1` (set `https://moveit.cnyric.org`), others under Web Admin at `https://<host>/webadmin/api/v1` (set `https://host/webadmin`). A trailing `/api/v1` is tolerated and stripped automatically.
 
 ## Tool reference
 
@@ -220,7 +220,7 @@ Pagination tools accept `page`, `perPage`, `fields`, and (where noted) a `name`/
 
 ### Reports
 
-All report tools take `predicate` (required), optional `orderBy`, optional `maxCount` (positive integer, max 10000).
+All report tools take `predicate` (required), optional `orderBy`, optional `maxCount` (positive integer, max 10000). MOVEit accepts single-quoted strings in predicates, e.g. `Status=in=('Success','Failure')`, which is convenient when embedding in JSON bodies.
 
 | Tool                          | Input                              | Description                                                                                                           |
 | ----------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
@@ -243,7 +243,7 @@ Example:
 - Combining: `;` or `and` for AND, `,` or `or` for OR.
 - Operators: `==`, `!=`, `=lt=` (`<`), `=le=` (`<=`), `=gt=` (`>`), `=ge=` (`>=`), `=in=`, `=out=`, `=like=`.
 - `=like=` supports `%` (any string) and `_` (any single character) wildcards.
-- String values are quoted; `=in=`/`=out=` take a parenthesized, comma-separated list of quoted values, e.g. `Status=in=("Success","Failure")`.
+- String values are quoted; `=in=`/`=out=` take a parenthesized, comma-separated list of quoted values, e.g. `Status=in=("Success","Failure")`. MOVEit also accepts single quotes in predicates, e.g. `Status=in=('Success','Failure')`, which is convenient when embedding the predicate in a JSON body.
 - A leading `!` in `orderBy` values sorts descending (`!LogTime` = newest first).
 
 ## Out of scope (v1)
@@ -256,7 +256,7 @@ Example:
 ## Troubleshooting
 
 - **Missing environment variables** — startup fails with a list naming exactly which required variables are missing.
-- **401 loops** — usually wrong credentials, or `MOVEIT_BASE_URL` missing the `/webadmin` suffix while `MOVEIT_SERVER_HOST` diverges from the base URL host. Verify all three.
+- **401 loops** — usually wrong credentials, or `MOVEIT_BASE_URL` pointing at the wrong root (bare host for a Web Admin-served deployment, or `/webadmin` where the API lives at the host root) while `MOVEIT_SERVER_HOST` diverges from the base URL host. Verify all three.
 - **Self-signed certificate errors** — set `MOVEIT_TLS_REJECT_UNAUTHORIZED=false` (non-production only).
 - **HTTP 422 on reports** — invalid `page`/`perPage` combinations or out-of-range `maxCount`; both must be positive integers (`maxCount` ≤ 10000).
 
