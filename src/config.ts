@@ -28,7 +28,10 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
   const tlsRaw = env.MOVEIT_TLS_REJECT_UNAUTHORIZED;
 
   return {
-    baseUrl: baseUrl.replace(/\/+$/, ''),
+    baseUrl: baseUrl
+      .replace(/\/+$/, '')
+      .replace(/\/api\/v1$/i, '')
+      .replace(/\/+$/, ''),
     username,
     password,
     serverHost: env.MOVEIT_SERVER_HOST,

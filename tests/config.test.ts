@@ -72,3 +72,32 @@ describe('loadConfig', () => {
     }
   });
 });
+
+it('strips a trailing /api/v1 suffix case-insensitively', () => {
+  expect(
+    loadConfig({
+      ...validEnv,
+      MOVEIT_BASE_URL: 'https://moveit.cnyric.org/api/v1',
+    }).baseUrl,
+  ).toBe('https://moveit.cnyric.org');
+  expect(
+    loadConfig({
+      ...validEnv,
+      MOVEIT_BASE_URL: 'https://moveit.cnyric.org/api/v1/',
+    }).baseUrl,
+  ).toBe('https://moveit.cnyric.org');
+  expect(
+    loadConfig({ ...validEnv, MOVEIT_BASE_URL: 'https://x.org/API/V1' })
+      .baseUrl,
+  ).toBe('https://x.org');
+});
+
+it('keeps a /webadmin suffix on baseUrl', () => {
+  expect(
+    loadConfig({ ...validEnv, MOVEIT_BASE_URL: 'https://host/webadmin' })
+      .baseUrl,
+  ).toBe('https://host/webadmin');
+  expect(
+    loadConfig({ ...validEnv, MOVEIT_BASE_URL: 'https://host' }).baseUrl,
+  ).toBe('https://host');
+});
