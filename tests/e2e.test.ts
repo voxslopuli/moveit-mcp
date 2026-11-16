@@ -17,7 +17,7 @@ describe('stdio e2e smoke', () => {
     }
   });
 
-  it('lists 29 tools and serves info/tasks through the fake MOVEit API', async () => {
+  it('lists default tools and serves info/tasks through the fake MOVEit API', async () => {
     fake = await startFakeMoveit();
     const childEnv: Record<string, string> = {
       MOVEIT_BASE_URL: `http://127.0.0.1:${fake.port}/webadmin`,
@@ -37,7 +37,7 @@ describe('stdio e2e smoke', () => {
     await client.connect(transport);
 
     const tools = await client.listTools();
-    expect(tools.tools.length).toBe(29);
+    expect(tools.tools.length).toBe(16);
 
     const info = await client.callTool({ name: 'moveit_get_info' });
     const infoText = (info.content as Array<{ type: string; text: string }>)[0]
@@ -94,6 +94,19 @@ describe('stdio e2e smoke', () => {
       deleted.content as Array<{ type: string; text: string }>
     )[0].text;
     expect(JSON.parse(deletedText)).toEqual({ deleted: '226676691' });
+
+    // config tools are disabled by default; enable the group via meta tool
+    const enableResult = await client.callTool({
+      name: 'moveit_tools_enable',
+      arguments: { groups: ['config'] },
+    });
+    const enableText = (
+      enableResult.content as Array<{ type: string; text: string }>
+    )[0].text;
+    expect(JSON.parse(enableText)).toEqual({
+      enabled: ['info', 'tasks', 'reports', 'config'],
+      added: ['config'],
+    });
 
     const config = await client.callTool({ name: 'moveit_get_config' });
     const configText = (

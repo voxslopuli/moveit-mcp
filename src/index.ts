@@ -12,7 +12,9 @@ import { registerMoveitDateLists } from './tools/datelists.js';
 import { registerMoveitGlobalParameters } from './tools/globalparameters.js';
 import { registerMoveitHosts } from './tools/hosts.js';
 import { registerMoveitInfo } from './tools/info.js';
+import { registerMoveitMeta } from './tools/meta.js';
 import { registerMoveitPgpKeys } from './tools/pgpkeys.js';
+import { type ToolGroup, ToolRegistry } from './tools/registry.js';
 import { registerMoveitReports } from './tools/reports.js';
 import { registerMoveitSshKeys } from './tools/sshkeys.js';
 import { registerMoveitTaskCrud } from './tools/taskcrud.js';
@@ -34,18 +36,44 @@ export function createServer(cfg: Config): MoveitMcpServer {
     version: pkg.version,
   });
 
-  registerMoveitHosts(server, client);
-  registerMoveitInfo(server, client);
-  registerMoveitTaskGroups(server, client);
-  registerMoveitGlobalParameters(server, client);
-  registerMoveitCustomScripts(server, client);
-  registerMoveitDateLists(server, client);
-  registerMoveitPgpKeys(server, client);
-  registerMoveitSshKeys(server, client);
-  registerMoveitTasks(server, client);
-  registerMoveitTaskCrud(server, client);
-  registerMoveitConfig(server, client);
-  registerMoveitReports(server, client);
+  const registry = new ToolRegistry(server);
+
+  const registerAll =
+    (
+      ...registerFns: Array<(server: McpServer, client: MoveitClient) => void>
+    ) =>
+    (registryServer: McpServer) => {
+      for (const register of registerFns) register(registryServer, client);
+    };
+
+  const groups: Array<[ToolGroup, (server: McpServer) => void]> = [
+    ['info', registerAll(registerMoveitInfo)],
+    ['tasks', registerAll(registerMoveitTasks, registerMoveitTaskCrud)],
+    ['reports', registerAll(registerMoveitReports)],
+    ['config', registerAll(registerMoveitConfig)],
+    [
+      'resources',
+      registerAll(
+        registerMoveitHosts,
+        registerMoveitTaskGroups,
+        registerMoveitGlobalParameters,
+        registerMoveitCustomScripts,
+        registerMoveitDateLists,
+        registerMoveitPgpKeys,
+        registerMoveitSshKeys,
+      ),
+    ],
+    ['access', () => {}],
+  ];
+  for (const [group, register] of groups) {
+    registry.registerGroup(group, register);
+  }
+
+  registerMoveitMeta(registry);
+
+  for (const group of ['info', 'tasks', 'reports'] as const) {
+    registry.enable(group);
+  }
 
   let shuttingDown = false;
   const shutdown = async (): Promise<void> => {
