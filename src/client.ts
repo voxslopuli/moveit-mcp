@@ -250,4 +250,106 @@ export class MoveitClient {
       passphrase,
     });
   }
+
+  async listSSLCerts(params?: {
+    fields?: string;
+    page?: number;
+    perPage?: number;
+  }): Promise<unknown> {
+    return this.request('GET', `/api/v1/sslcerts${this.buildQuery(params)}`);
+  }
+
+  async getSSLCert(sslCertificateThumbprint: string): Promise<unknown> {
+    return this.request(
+      'GET',
+      `/api/v1/sslcerts/${sslCertificateThumbprint}`,
+    );
+  }
+
+  async listStandardScripts(params?: {
+    name?: string;
+    fields?: string;
+    page?: number;
+    perPage?: number;
+  }): Promise<unknown> {
+    return this.request(
+      'GET',
+      `/api/v1/standardscripts${this.buildQuery(params)}`,
+    );
+  }
+
+  async getStandardScript(standardScriptId: string): Promise<unknown> {
+    return this.request(
+      'GET',
+      `/api/v1/standardscripts/${standardScriptId}`,
+    );
+  }
+
+  async listUserGroups(params?: {
+    name?: string;
+    fields?: string;
+    page?: number;
+    perPage?: number;
+  }): Promise<unknown> {
+    return this.request('GET', `/api/v1/usergroups${this.buildQuery(params)}`);
+  }
+
+  async getUserGroup(userGroupName: string): Promise<unknown> {
+    return this.request('GET', `/api/v1/usergroups/${userGroupName}`);
+  }
+
+  async listResourceGroups(params?: {
+    name?: string;
+    fields?: string;
+    page?: number;
+    perPage?: number;
+  }): Promise<unknown> {
+    return this.request(
+      'GET',
+      `/api/v1/resourcegroups${this.buildQuery(params)}`,
+    );
+  }
+
+  async getResourceGroup(resourceGroupName: string): Promise<unknown> {
+    return this.request('GET', `/api/v1/resourcegroups/${resourceGroupName}`);
+  }
+
+  async listACLs(params?: {
+    fields?: string;
+    page?: number;
+    perPage?: number;
+  }): Promise<unknown> {
+    return this.request(
+      'GET',
+      `/api/v1/resourcegroups/acls${this.buildQuery(params)}`,
+    );
+  }
+
+  async getACL(aclId: string): Promise<unknown> {
+    return this.request('GET', `/api/v1/resourcegroups/acls/${aclId}`);
+  }
+
+  async addACL(acl: unknown): Promise<unknown> {
+    return this.request('POST', '/api/v1/resourcegroups/acls', acl);
+  }
+
+  async updateACL(aclId: string, acl: unknown): Promise<unknown> {
+    return this.request('PUT', `/api/v1/resourcegroups/acls/${aclId}`, acl);
+  }
+
+  async deleteACL(aclId: string): Promise<unknown> {
+    return this.request('DELETE', `/api/v1/resourcegroups/acls/${aclId}`);
+  }
+
+  private buildQuery(params?: Record<string, unknown>): string {
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(params ?? {})) {
+      if (value !== undefined) {
+        query.set(key, String(value));
+      }
+    }
+    const qs = query.toString();
+    return qs ? `?${qs}` : '';
+  }
+
 }

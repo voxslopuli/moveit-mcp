@@ -389,4 +389,155 @@ describe('MoveitClient', () => {
       expect(result).toBeNull();
     });
   });
+
+  describe('2024.1 endpoints: sslcerts, standardscripts, usergroups, resourcegroups, acls', () => {
+    it('listSSLCerts GETs /api/v1/sslcerts with fields/page/perPage only', async () => {
+      queue.push({ status: 200, body: { items: [] } });
+      const { client } = makeClient(['tok1']);
+      await client.listSSLCerts({ fields: 'Thumbprint', page: 1, perPage: 25 });
+      expect(calls[0].init.method).toBe('GET');
+      expect(calls[0].url).toBe(
+        'https://moveit.example.com/api/v1/sslcerts?fields=Thumbprint&page=1&perPage=25',
+      );
+    });
+
+    it('listSSLCerts without params has no query string', async () => {
+      queue.push({ status: 200, body: { items: [] } });
+      const { client } = makeClient(['tok1']);
+      await client.listSSLCerts();
+      expect(calls[0].url).toBe('https://moveit.example.com/api/v1/sslcerts');
+    });
+
+    it('getSSLCert GETs /api/v1/sslcerts/{thumbprint}', async () => {
+      queue.push({ status: 200, body: { Thumbprint: 'AB12', Name: 'ca' } });
+      const { client } = makeClient(['tok1']);
+      const cert = await client.getSSLCert('AB12');
+      expect(calls[0].init.method).toBe('GET');
+      expect(calls[0].url).toBe(
+        'https://moveit.example.com/api/v1/sslcerts/AB12',
+      );
+      expect(cert).toEqual({ Thumbprint: 'AB12', Name: 'ca' });
+    });
+
+    it('listStandardScripts GETs /api/v1/standardscripts with name filter', async () => {
+      queue.push({ status: 200, body: { items: [] } });
+      const { client } = makeClient(['tok1']);
+      await client.listStandardScripts({ name: 'rotate', page: 2, perPage: 10 });
+      expect(calls[0].init.method).toBe('GET');
+      expect(calls[0].url).toBe(
+        'https://moveit.example.com/api/v1/standardscripts?name=rotate&page=2&perPage=10',
+      );
+    });
+
+    it('getStandardScript GETs /api/v1/standardscripts/{standardScriptId}', async () => {
+      queue.push({ status: 200, body: { Name: 'rotate' } });
+      const { client } = makeClient(['tok1']);
+      const script = await client.getStandardScript('rotate');
+      expect(calls[0].init.method).toBe('GET');
+      expect(calls[0].url).toBe(
+        'https://moveit.example.com/api/v1/standardscripts/rotate',
+      );
+      expect(script).toEqual({ Name: 'rotate' });
+    });
+
+    it('listUserGroups GETs /api/v1/usergroups with name filter', async () => {
+      queue.push({ status: 200, body: { items: [] } });
+      const { client } = makeClient(['tok1']);
+      await client.listUserGroups({ name: 'admins' });
+      expect(calls[0].init.method).toBe('GET');
+      expect(calls[0].url).toBe(
+        'https://moveit.example.com/api/v1/usergroups?name=admins',
+      );
+    });
+
+    it('getUserGroup GETs /api/v1/usergroups/{userGroupName}', async () => {
+      queue.push({ status: 200, body: { Name: 'admins' } });
+      const { client } = makeClient(['tok1']);
+      const group = await client.getUserGroup('admins');
+      expect(calls[0].init.method).toBe('GET');
+      expect(calls[0].url).toBe(
+        'https://moveit.example.com/api/v1/usergroups/admins',
+      );
+      expect(group).toEqual({ Name: 'admins' });
+    });
+
+    it('listResourceGroups GETs /api/v1/resourcegroups with pagination', async () => {
+      queue.push({ status: 200, body: { items: [] } });
+      const { client } = makeClient(['tok1']);
+      await client.listResourceGroups({ page: 1, perPage: 50 });
+      expect(calls[0].init.method).toBe('GET');
+      expect(calls[0].url).toBe(
+        'https://moveit.example.com/api/v1/resourcegroups?page=1&perPage=50',
+      );
+    });
+
+    it('getResourceGroup GETs /api/v1/resourcegroups/{resourceGroupName}', async () => {
+      queue.push({ status: 200, body: { Name: 'reports' } });
+      const { client } = makeClient(['tok1']);
+      const group = await client.getResourceGroup('reports');
+      expect(calls[0].init.method).toBe('GET');
+      expect(calls[0].url).toBe(
+        'https://moveit.example.com/api/v1/resourcegroups/reports',
+      );
+      expect(group).toEqual({ Name: 'reports' });
+    });
+
+    it('listACLs GETs /api/v1/resourcegroups/acls', async () => {
+      queue.push({ status: 200, body: { items: [] } });
+      const { client } = makeClient(['tok1']);
+      await client.listACLs({ fields: 'ID', page: 1, perPage: 10 });
+      expect(calls[0].init.method).toBe('GET');
+      expect(calls[0].url).toBe(
+        'https://moveit.example.com/api/v1/resourcegroups/acls?fields=ID&page=1&perPage=10',
+      );
+    });
+
+    it('getACL GETs /api/v1/resourcegroups/acls/{aclId}', async () => {
+      queue.push({ status: 200, body: { ID: '99' } });
+      const { client } = makeClient(['tok1']);
+      const acl = await client.getACL('99');
+      expect(calls[0].init.method).toBe('GET');
+      expect(calls[0].url).toBe(
+        'https://moveit.example.com/api/v1/resourcegroups/acls/99',
+      );
+      expect(acl).toEqual({ ID: '99' });
+    });
+
+    it('addACL POSTs verbatim JSON to /api/v1/resourcegroups/acls', async () => {
+      const acl = { Type: 'usergroup', Permission: 15, TargetName: 'admins' };
+      queue.push({ status: 201, body: { ...acl, ID: '5' } });
+      const { client } = makeClient(['tok1']);
+      await client.addACL(acl);
+      expect(calls[0].init.method).toBe('POST');
+      expect(calls[0].url).toBe(
+        'https://moveit.example.com/api/v1/resourcegroups/acls',
+      );
+      expect(JSON.parse(String(calls[0].init.body))).toEqual(acl);
+    });
+
+    it('updateACL PUTs verbatim JSON to /api/v1/resourcegroups/acls/{aclId}', async () => {
+      const acl = { ID: '5', Permission: 7 };
+      queue.push({ status: 200, body: acl });
+      const { client } = makeClient(['tok1']);
+      await client.updateACL('5', acl);
+      expect(calls[0].init.method).toBe('PUT');
+      expect(calls[0].url).toBe(
+        'https://moveit.example.com/api/v1/resourcegroups/acls/5',
+      );
+      expect(JSON.parse(String(calls[0].init.body))).toEqual(acl);
+    });
+
+    it('deleteACL sends DELETE to /api/v1/resourcegroups/acls/{aclId}', async () => {
+      queue.push({ status: 200, body: '' });
+      const { client } = makeClient(['tok1']);
+      const result = await client.deleteACL('5');
+      expect(calls[0].init.method).toBe('DELETE');
+      expect(calls[0].url).toBe(
+        'https://moveit.example.com/api/v1/resourcegroups/acls/5',
+      );
+      expect(calls[0].init.body).toBeUndefined();
+      expect(result).toBeNull();
+    });
+  });
+
 });
