@@ -99,6 +99,26 @@ export class MoveitClient {
     await this.request('PUT', `/api/v1/tasks/scheduler/${action}`);
   }
 
+  async getConfig(): Promise<unknown> {
+    return this.request('GET', '/api/v1/config');
+  }
+
+  async putConfig(config: unknown): Promise<unknown> {
+    return this.request('PUT', '/api/v1/config', config);
+  }
+
+  async createTask(task: unknown): Promise<unknown> {
+    return this.request('POST', '/api/v1/tasks', task);
+  }
+
+  async updateTask(id: string, task: unknown): Promise<unknown> {
+    return this.request('PUT', `/api/v1/tasks/${id}`, task);
+  }
+
+  async deleteTask(id: string): Promise<unknown> {
+    return this.request('DELETE', `/api/v1/tasks/${id}`);
+  }
+
   async report(kind: ReportKind, q: ReportQuery): Promise<unknown> {
     const body: Record<string, unknown> = { predicate: q.predicate };
     if (q.orderBy !== undefined) body.orderBy = q.orderBy;

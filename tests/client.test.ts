@@ -16,6 +16,9 @@ interface QueuedResponse {
 }
 
 function jsonRes(status: number, body: unknown): Response {
+  if (body === '') {
+    return new Response(null, { status });
+  }
   return new Response(JSON.stringify(body), {
     status,
     headers: { 'Content-Type': 'application/json' },
@@ -225,5 +228,63 @@ describe('MoveitClient', () => {
       'https://moveit.example.com/api/v1/tasks/running',
     );
     expect(result).toEqual([]);
+  });
+
+  it('getConfig GETs /api/v1/config', async () => {
+    queue.push({ status: 200, body: { settings: [] } });
+    const { client } = makeClient(['tok1']);
+    const result = await client.getConfig();
+    expect(calls[0].init.method).toBe('GET');
+    expect(calls[0].url).toBe('https://moveit.example.com/api/v1/config');
+    expect(result).toEqual({ settings: [] });
+  });
+
+  it('putConfig PUTs full AdminConfigModel JSON verbatim and returns updated config', async () => {
+    const config = { settings: [{ name: 'ftp.passive', value: 'true' }] };
+    queue.push({ status: 200, body: config });
+    const { client } = makeClient(['tok1']);
+    const result = await client.putConfig(config);
+    expect(calls[0].init.method).toBe('PUT');
+    expect(calls[0].url).toBe('https://moveit.example.com/api/v1/config');
+    const headers = new Headers(calls[0].init.headers);
+    expect(headers.get('Content-Type')).toBe('application/json');
+    expect(JSON.parse(String(calls[0].init.body))).toEqual(config);
+    expect(result).toEqual(config);
+  });
+
+  it('createTask POSTs Task JSON to /api/v1/tasks and returns created task', async () => {
+    const task = { Name: 'nightly transfer', Type: 'Traditional' };
+    queue.push({ status: 201, body: { ...task, ID: '42' } });
+    const { client } = makeClient(['tok1']);
+    const result = await client.createTask(task);
+    expect(calls[0].init.method).toBe('POST');
+    expect(calls[0].url).toBe('https://moveit.example.com/api/v1/tasks');
+    const headers = new Headers(calls[0].init.headers);
+    expect(headers.get('Content-Type')).toBe('application/json');
+    expect(JSON.parse(String(calls[0].init.body))).toEqual(task);
+    expect(result).toEqual({ ...task, ID: '42' });
+  });
+
+  it('updateTask PUTs full Task JSON to /api/v1/tasks/{id} and returns updated task', async () => {
+    const task = { Name: 'renamed task', Type: 'Traditional' };
+    queue.push({ status: 200, body: { ...task, ID: '42' } });
+    const { client } = makeClient(['tok1']);
+    const result = await client.updateTask('42', task);
+    expect(calls[0].init.method).toBe('PUT');
+    expect(calls[0].url).toBe('https://moveit.example.com/api/v1/tasks/42');
+    const headers = new Headers(calls[0].init.headers);
+    expect(headers.get('Content-Type')).toBe('application/json');
+    expect(JSON.parse(String(calls[0].init.body))).toEqual(task);
+    expect(result).toEqual({ ...task, ID: '42' });
+  });
+
+  it('deleteTask sends DELETE to /api/v1/tasks/{id} and handles empty body', async () => {
+    queue.push({ status: 200, body: '' });
+    const { client } = makeClient(['tok1']);
+    const result = await client.deleteTask('42');
+    expect(calls[0].init.method).toBe('DELETE');
+    expect(calls[0].url).toBe('https://moveit.example.com/api/v1/tasks/42');
+    expect(calls[0].init.body).toBeUndefined();
+    expect(result).toBeNull();
   });
 });
