@@ -1,4 +1,5 @@
 # MOVEit Automation MCP Server Implementation Plan
+> Addendum: final tool count is 24 (17 was a miscount; moveit_get_info added during Task 11).
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -165,7 +166,7 @@ describe("scaffold", () => {
 **Interfaces:**
 - Consumes: everything above. Produces exported `createServer(cfg: Config): { server: McpServer; client: MoveitClient; shutdown(): Promise<void> }` and exported `runMain(env)` / `main()` that loads env, creates the server, connects `StdioServerTransport`, and calls `shutdown()` (token revoke) on SIGINT/SIGTERM.
 
-- [ ] **Step 1: Failing tests:** `createServer` registers all 17 tools (`server.server.listTools()` length pinned = 17, all `moveit_`-prefixed); missing env in `runMain` → throws `ConfigError` with aggregated message before any transport connect; `shutdown()` calls `tokenManager.revoke()` exactly once.
+- [ ] **Step 1: Failing tests:** `createServer` registers all 24 tools (`server.server.listTools()` length pinned = 24, all `moveit_`-prefixed); missing env in `runMain` → throws `ConfigError` with aggregated message before any transport connect; `shutdown()` calls `tokenManager.revoke()` exactly once.
 - [ ] **Step 2:** FAIL. **Step 3:** Implement entrypoint; logging to stderr only (stdout is the MCP channel). **Step 4:** PASS, plus `npm run build` → `dist/index.js` exists with node shebang. **Step 5:** Commit `feat: stdio MCP server entrypoint`.
 
 ### Task 11: End-to-end smoke against a fake MOVEit
@@ -177,7 +178,7 @@ describe("scaffold", () => {
 **Interfaces:**
 - Consumes: full real stack (config → client → server) over stdio via SDK `StdioClientTransport` spawning `tsx src/index.ts` with fake-server env.
 
-- [ ] **Step 1: Failing test:** spawn server via `StdioClientTransport`; `listTools()` → 17; `callTool("moveit_get_info")` → fake server's version payload; `callTool("moveit_list_tasks")` → fixture tasks; fake server asserts a bearer token arrived.
+- [ ] **Step 1: Failing test:** spawn server via `StdioClientTransport`; `listTools()` → 24; `callTool("moveit_get_info")` → fake server's version payload; `callTool("moveit_list_tasks")` → fixture tasks; fake server asserts a bearer token arrived.
 - [ ] **Step 2:** FAIL. **Step 3:** Only test code + fake server — fix product code if the test exposes wiring bugs (report any product change in the commit message). **Step 4:** PASS; `npm test`, `npm run lint`, `npm run build` all green. **Step 5:** Commit `test: e2e stdio smoke against fake MOVEit`.
 
 ### Task 12: README + example config
@@ -185,5 +186,5 @@ describe("scaffold", () => {
 **Files:**
 - Create: `README.md`; Modify: `.env.example`
 
-- [ ] **Step 1:** README: env-var table, MCP client config snippet (`command: node dist/index.js`, env block), tool inventory (17 rows), security note (creds via env, TLS flag, token revocation on shutdown), out-of-scope list. `.env.example` mirrors Task 2 vars.
+- [ ] **Step 1:** README: env-var table, MCP client config snippet (`command: node dist/index.js`, env block), tool inventory (24 rows), security note (creds via env, TLS flag, token revocation on shutdown), out-of-scope list. `.env.example` mirrors Task 2 vars.
 - [ ] **Step 2:** `npm test && npm run lint` green. **Step 3:** Commit `docs: README and env example`.
