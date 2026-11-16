@@ -34,6 +34,11 @@ const EXPECTED_TOOLS = [
   'moveit_audit_report',
   'moveit_file_activity_report',
   'moveit_task_runs_report',
+  'moveit_get_config',
+  'moveit_put_config',
+  'moveit_create_task',
+  'moveit_update_task',
+  'moveit_delete_task',
 ];
 
 describe('createServer', () => {

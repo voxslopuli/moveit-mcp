@@ -17,7 +17,7 @@ describe('stdio e2e smoke', () => {
     }
   });
 
-  it('lists 24 tools and serves info/tasks through the fake MOVEit API', async () => {
+  it('lists 29 tools and serves info/tasks through the fake MOVEit API', async () => {
     fake = await startFakeMoveit();
     const childEnv: Record<string, string> = {
       MOVEIT_BASE_URL: `http://127.0.0.1:${fake.port}/webadmin`,
@@ -37,7 +37,7 @@ describe('stdio e2e smoke', () => {
     await client.connect(transport);
 
     const tools = await client.listTools();
-    expect(tools.tools.length).toBe(24);
+    expect(tools.tools.length).toBe(29);
 
     const info = await client.callTool({ name: 'moveit_get_info' });
     const infoText = (info.content as Array<{ type: string; text: string }>)[0]
@@ -57,6 +57,51 @@ describe('stdio e2e smoke', () => {
     expect(parsed.items).toEqual([
       { ID: '226676691', Name: '!TaylorImportTest', Active: 0 },
     ]);
+
+    const created = await client.callTool({
+      name: 'moveit_create_task',
+      arguments: { task: { Name: 'new-task', Active: 0 } },
+    });
+    const createdText = (
+      created.content as Array<{ type: string; text: string }>
+    )[0].text;
+    expect(JSON.parse(createdText)).toEqual({
+      Name: 'new-task',
+      Active: 0,
+    });
+
+    const updated = await client.callTool({
+      name: 'moveit_update_task',
+      arguments: {
+        taskId: '226676691',
+        task: { ID: '226676691', Name: 'renamed', Active: 1 },
+      },
+    });
+    const updatedText = (
+      updated.content as Array<{ type: string; text: string }>
+    )[0].text;
+    expect(JSON.parse(updatedText)).toEqual({
+      ID: '226676691',
+      Name: 'renamed',
+      Active: 1,
+    });
+
+    const deleted = await client.callTool({
+      name: 'moveit_delete_task',
+      arguments: { taskId: '226676691' },
+    });
+    const deletedText = (
+      deleted.content as Array<{ type: string; text: string }>
+    )[0].text;
+    expect(JSON.parse(deletedText)).toEqual({ deleted: '226676691' });
+
+    const config = await client.callTool({ name: 'moveit_get_config' });
+    const configText = (
+      config.content as Array<{ type: string; text: string }>
+    )[0].text;
+    expect(JSON.parse(configText)).toEqual({
+      Settings: { adminEmail: 'admin@example.com' },
+    });
 
     expect(fake.seenBearer()).toBe(true);
   });

@@ -49,6 +49,50 @@ export function startFakeMoveit(): Promise<FakeMoveit> {
         );
         return;
       }
+      if (
+        req.method === 'GET' &&
+        pathname === '/webadmin/api/v1/tasks/226676691'
+      ) {
+        res.end(JSON.stringify({ ID: '226676691', Name: '!TaylorImportTest' }));
+        return;
+      }
+      if (req.method === 'POST' && pathname === '/webadmin/api/v1/tasks') {
+        let body = '';
+        req.on('data', (c: Buffer) => (body += c));
+        req.on('end', () => {
+          res.statusCode = 201;
+          res.end(body || '{}');
+        });
+        return;
+      }
+      {
+        const m = pathname.match(/^\/webadmin\/api\/v1\/tasks\/([^/]+)$/);
+        if (m && req.method === 'PUT') {
+          let body = '';
+          req.on('data', (c: Buffer) => (body += c));
+          req.on('end', () => {
+            res.end(body || '{}');
+          });
+          return;
+        }
+        if (m && req.method === 'DELETE') {
+          res.end(JSON.stringify({ deleted: m[1] }));
+          return;
+        }
+      }
+      const configFixture = { Settings: { adminEmail: 'admin@example.com' } };
+      if (req.method === 'GET' && pathname === '/webadmin/api/v1/config') {
+        res.end(JSON.stringify(configFixture));
+        return;
+      }
+      if (req.method === 'PUT' && pathname === '/webadmin/api/v1/config') {
+        let body = '';
+        req.on('data', (c: Buffer) => (body += c));
+        req.on('end', () => {
+          res.end(body || '{}');
+        });
+        return;
+      }
       res.statusCode = 404;
       res.end(JSON.stringify({ detail: 'Not found' }));
     },

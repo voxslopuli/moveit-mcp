@@ -5,6 +5,7 @@ import pkg from '../package.json' with { type: 'json' };
 import { MoveitClient } from './client.js';
 import { type Config, ConfigError, loadConfig } from './config.js';
 import { TokenManager } from './token-manager.js';
+import { registerMoveitConfig } from './tools/config.js';
 import { registerMoveitCustomScripts } from './tools/customscripts.js';
 import { registerMoveitDateLists } from './tools/datelists.js';
 import { registerMoveitGlobalParameters } from './tools/globalparameters.js';
@@ -13,6 +14,7 @@ import { registerMoveitInfo } from './tools/info.js';
 import { registerMoveitPgpKeys } from './tools/pgpkeys.js';
 import { registerMoveitReports } from './tools/reports.js';
 import { registerMoveitSshKeys } from './tools/sshkeys.js';
+import { registerMoveitTaskCrud } from './tools/taskcrud.js';
 import { registerMoveitTaskGroups } from './tools/taskgroups.js';
 import { registerMoveitTasks } from './tools/tasks.js';
 
@@ -40,6 +42,8 @@ export function createServer(cfg: Config): MoveitMcpServer {
   registerMoveitPgpKeys(server, client);
   registerMoveitSshKeys(server, client);
   registerMoveitTasks(server, client);
+  registerMoveitTaskCrud(server, client);
+  registerMoveitConfig(server, client);
   registerMoveitReports(server, client);
 
   let shuttingDown = false;
