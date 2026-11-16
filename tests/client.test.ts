@@ -568,3 +568,46 @@ describe('dispatcher passthrough', () => {
     );
   });
 });
+
+describe('private-IP redaction in API errors', () => {
+  function runWithBody(body: unknown) {
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(JSON.stringify(body), {
+          status: 502,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+    );
+    const stub = stubTokenManager(['tok1']);
+    const client = new MoveitClient(cfg, stub.tm as unknown as TokenManager, {
+      fetchImpl: fetchMock as unknown as typeof fetch,
+    });
+    return client.list('hosts').catch((e: unknown) => e);
+  }
+
+  it('redacts RFC1918 addresses in detail text', async () => {
+    const err = (await runWithBody({
+      detail:
+        'Failed to authenticate with MOVEit Automation server at host 10.0.24.56',
+    })) as MoveitApiError;
+    expect(err).toBeInstanceOf(MoveitApiError);
+    expect(err.message).toBe(
+      'Failed to authenticate with MOVEit Automation server at host [redacted-ip]',
+    );
+  });
+
+  it('redacts RFC1918 addresses in title fallback', async () => {
+    const err = (await runWithBody({
+      title: 'Bad gateway to 192.168.7.20',
+    })) as MoveitApiError;
+    expect(err.message).toBe('Bad gateway to [redacted-ip]');
+  });
+
+  it('leaves public IPs untouched in error text', async () => {
+    const err = (await runWithBody({
+      detail:
+        'Failed to authenticate with MOVEit Automation server at host 170.158.0.56',
+    })) as MoveitApiError;
+    expect(err.message).toContain('170.158.0.56');
+  });
+});

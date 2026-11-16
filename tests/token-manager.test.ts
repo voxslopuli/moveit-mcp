@@ -247,3 +247,40 @@ describe('dispatcher passthrough', () => {
     }
   });
 });
+
+describe('private-IP redaction in token errors', () => {
+  async function errorFrom(body: Record<string, unknown>) {
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(JSON.stringify(body), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+    );
+    const tm = new TokenManager(
+      baseConfig,
+      fetchMock as unknown as typeof fetch,
+    );
+    return (await tm.getToken().catch((e: unknown) => e)) as Error;
+  }
+
+  it('redacts RFC1918 addresses in error_description', async () => {
+    const err = await errorFrom({
+      error: 'invalid_grant',
+      error_description:
+        'Failed to authenticate with MOVEit Automation server at host 10.0.24.56',
+    });
+    expect(err.message).toBe(
+      'Failed to authenticate with MOVEit Automation server at host [redacted-ip]',
+    );
+  });
+
+  it('leaves public IP addresses untouched in error_description', async () => {
+    const err = await errorFrom({
+      error: 'invalid_grant',
+      error_description:
+        'Failed to authenticate with MOVEit Automation server at host 170.158.0.56',
+    });
+    expect(err.message).toContain('170.158.0.56');
+  });
+});

@@ -1,4 +1,5 @@
 import type { Config } from './config.js';
+import { redactPrivateIps } from './redact.js';
 
 interface TokenResponse {
   access_token: string;
@@ -136,6 +137,6 @@ export class TokenManager {
     } catch {
       // keep default status message
     }
-    throw new Error(message);
+    throw new Error(redactPrivateIps(message));
   }
 }

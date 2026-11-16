@@ -1,4 +1,5 @@
 import type { Config } from './config.js';
+import { redactPrivateIps } from './redact.js';
 import type { TokenManager } from './token-manager.js';
 
 export class MoveitApiError extends Error {
@@ -191,7 +192,7 @@ export class MoveitClient {
     } catch {
       // keep default status message
     }
-    throw new MoveitApiError(status, detail);
+    throw new MoveitApiError(status, redactPrivateIps(detail));
   }
   async listTaskLogs(
     taskId: string,
