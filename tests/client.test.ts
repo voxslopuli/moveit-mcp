@@ -216,4 +216,14 @@ describe('MoveitClient', () => {
     await client.shutdown();
     expect(revoked).toHaveBeenCalledTimes(1);
   });
+  it('runningTasks GETs /api/v1/tasks/running', async () => {
+    queue.push({ status: 200, body: [] });
+    const { client } = makeClient(['tok1']);
+    const result = await client.runningTasks();
+    expect(calls[0].init.method).toBe('GET');
+    expect(calls[0].url).toBe(
+      'https://moveit.example.com/api/v1/tasks/running',
+    );
+    expect(result).toEqual([]);
+  });
 });

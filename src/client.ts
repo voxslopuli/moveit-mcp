@@ -80,6 +80,10 @@ export class MoveitClient {
     return this.request<T>('GET', `/api/v1/${resource}/${id}`);
   }
 
+  async runningTasks(): Promise<unknown> {
+    return this.request('GET', '/api/v1/tasks/running');
+  }
+
   async startTask(
     id: string,
     params?: Record<string, string>,
