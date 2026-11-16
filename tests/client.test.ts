@@ -1,0 +1,219 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { MoveitApiError, MoveitClient } from '../src/client.js';
+import type { Config } from '../src/config.js';
+import type { TokenManager } from '../src/token-manager.js';
+
+const cfg: Config = {
+  baseUrl: 'https://moveit.example.com',
+  username: 'user',
+  password: 'pass',
+  tlsRejectUnauthorized: true,
+};
+
+interface QueuedResponse {
+  status: number;
+  body: unknown;
+}
+
+function jsonRes(status: number, body: unknown): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+/** Stub TokenManager: returns queued tokens; invalidate() advances the queue. */
+function stubTokenManager(tokens: string[]) {
+  let index = 0;
+  const invalidated = vi.fn();
+  const revoked = vi.fn();
+  const tm = {
+    getToken: vi.fn(async () => {
+      const token = tokens[Math.min(index, tokens.length - 1)];
+      return token;
+    }),
+    invalidate: vi.fn(() => {
+      invalidated();
+      index += 1;
+    }),
+    revoke: revoked,
+  };
+  return { tm, invalidated, revoked };
+}
+
+describe('MoveitClient', () => {
+  let fetchMock: ReturnType<typeof vi.fn>;
+  let queue: QueuedResponse[];
+  let calls: Array<{ url: string; init: RequestInit }>;
+
+  beforeEach(() => {
+    queue = [];
+    calls = [];
+    fetchMock = vi.fn(async (url: unknown, init?: RequestInit) => {
+      calls.push({ url: String(url), init: init ?? {} });
+      const next = queue.shift();
+      if (!next) throw new Error('fetch called with empty response queue');
+      return jsonRes(next.status, next.body);
+    });
+  });
+
+  function makeClient(tokens: string[]) {
+    const stub = stubTokenManager(tokens);
+    const client = new MoveitClient(cfg, stub.tm as unknown as TokenManager, {
+      fetchImpl: fetchMock as unknown as typeof fetch,
+    });
+    return { client, ...stub };
+  }
+
+  it('sends Bearer token and hits GET /api/v1/info', async () => {
+    queue.push({ status: 200, body: { version: '2023.0' } });
+    const { client } = makeClient(['tok1']);
+    await client.info();
+    expect(calls).toHaveLength(1);
+    expect(calls[0].url).toBe('https://moveit.example.com/api/v1/info');
+    expect(calls[0].init.method).toBe('GET');
+    const headers = new Headers(calls[0].init.headers);
+    expect(headers.get('Authorization')).toBe('Bearer tok1');
+  });
+
+  it('list encodes query params, skipping undefined', async () => {
+    queue.push({ status: 200, body: [] });
+    const { client } = makeClient(['tok1']);
+    await client.list('hosts', { page: 1, perPage: 10, name: undefined });
+    expect(calls[0].url).toBe(
+      'https://moveit.example.com/api/v1/hosts?page=1&perPage=10',
+    );
+    expect(calls[0].init.method).toBe('GET');
+  });
+
+  it('list rejects unknown resources', async () => {
+    const { client } = makeClient(['tok1']);
+    await expect(client.list('users')).rejects.toThrow(Error);
+    await expect(client.list('users')).rejects.not.toBeInstanceOf(
+      MoveitApiError,
+    );
+    expect(calls).toHaveLength(0);
+  });
+
+  it('get hits /api/v1/{resource}/{id}', async () => {
+    queue.push({ status: 200, body: { id: '42', name: 'h1' } });
+    const { client } = makeClient(['tok1']);
+    const host = await client.get<{ id: string }>('hosts', '42');
+    expect(calls[0].url).toBe('https://moveit.example.com/api/v1/hosts/42');
+    expect(host.id).toBe('42');
+  });
+
+  it('startTask POSTs JSON body to /api/v1/tasks/{id}/start', async () => {
+    queue.push({ status: 200, body: { ok: true } });
+    const { client } = makeClient(['tok1']);
+    await client.startTask('42', { comment: 'go' });
+    expect(calls[0].init.method).toBe('POST');
+    expect(calls[0].url).toBe(
+      'https://moveit.example.com/api/v1/tasks/42/start',
+    );
+    const headers = new Headers(calls[0].init.headers);
+    expect(headers.get('Content-Type')).toBe('application/json');
+    expect(calls[0].init.body).toBe(JSON.stringify({ comment: 'go' }));
+  });
+
+  it('stopTask POSTs to /api/v1/tasks/{id}/stop', async () => {
+    queue.push({ status: 200, body: { ok: true } });
+    const { client } = makeClient(['tok1']);
+    await client.stopTask('42');
+    expect(calls[0].url).toBe(
+      'https://moveit.example.com/api/v1/tasks/42/stop',
+    );
+  });
+
+  it('setScheduler("stop") PUTs /api/v1/tasks/scheduler/stop', async () => {
+    queue.push({ status: 200, body: '' });
+    const { client } = makeClient(['tok1']);
+    await client.setScheduler('stop');
+    expect(calls[0].init.method).toBe('PUT');
+    expect(calls[0].url).toBe(
+      'https://moveit.example.com/api/v1/tasks/scheduler/stop',
+    );
+  });
+
+  it('on 401: invalidates and retries once with the fresh token', async () => {
+    queue.push({ status: 401, body: { error: 'invalid_token' } });
+    queue.push({ status: 200, body: { value: [] } });
+    const { client, invalidated } = makeClient(['tok1', 'tok2']);
+    const data = await client.list('hosts');
+    expect(data).toEqual({ value: [] });
+    expect(invalidated).toHaveBeenCalledTimes(1);
+    expect(calls).toHaveLength(2);
+    const h1 = new Headers(calls[0].init.headers).get('Authorization');
+    const h2 = new Headers(calls[1].init.headers).get('Authorization');
+    expect(h1).toBe('Bearer tok1');
+    expect(h2).toBe('Bearer tok2');
+  });
+
+  it('on second 401: throws MoveitApiError with status 401 and detail', async () => {
+    queue.push({ status: 401, body: { error: 'invalid_token' } });
+    queue.push({ status: 401, body: { error_description: 'expired twice' } });
+    const { client, invalidated } = makeClient(['tok1', 'tok2']);
+    const err = await client.list('hosts').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(MoveitApiError);
+    const apiErr = err as MoveitApiError;
+    expect(apiErr.status).toBe(401);
+    expect(apiErr.message).toContain('expired twice');
+    expect(invalidated).toHaveBeenCalledTimes(1);
+    expect(calls).toHaveLength(2);
+  });
+
+  it('maps server error body {detail,status,title} into MoveitApiError', async () => {
+    queue.push({
+      status: 422,
+      body: {
+        title: 'Bad request',
+        detail: 'predicate is invalid',
+        status: 422,
+      },
+    });
+    const { client } = makeClient(['tok1']);
+    const err = await client.list('hosts').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(MoveitApiError);
+    const apiErr = err as MoveitApiError;
+    expect(apiErr.status).toBe(422);
+    expect(apiErr.detail).toBe('predicate is invalid');
+    expect(apiErr.message).toContain('predicate is invalid');
+  });
+
+  it('maps token-style error body {error, error_description} into MoveitApiError', async () => {
+    queue.push({
+      status: 403,
+      body: { error: 'access_denied', error_description: 'no permission' },
+    });
+    const { client } = makeClient(['tok1']);
+    const err = await client.stopTask('7').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(MoveitApiError);
+    expect((err as MoveitApiError).status).toBe(403);
+    expect((err as MoveitApiError).message).toContain('no permission');
+  });
+
+  it('report POSTs JSON body verbatim, preserving quotes in predicate', async () => {
+    queue.push({ status: 200, body: { records: [] } });
+    const { client } = makeClient(['tok1']);
+    await client.report('audit', {
+      predicate: 'FileName = "secret.txt"',
+      orderBy: 'Time',
+      maxCount: 100,
+    });
+    expect(calls[0].init.method).toBe('POST');
+    expect(calls[0].url).toBe(
+      'https://moveit.example.com/api/v1/reports/audit',
+    );
+    const headers = new Headers(calls[0].init.headers);
+    expect(headers.get('Content-Type')).toBe('application/json');
+    expect(calls[0].init.body).toBe(
+      '{"predicate":"FileName = \\"secret.txt\\"","orderBy":"Time","maxCount":100}',
+    );
+  });
+
+  it('shutdown delegates to tokenManager.revoke()', async () => {
+    const { client, revoked } = makeClient(['tok1']);
+    await client.shutdown();
+    expect(revoked).toHaveBeenCalledTimes(1);
+  });
+});
