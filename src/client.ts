@@ -43,6 +43,8 @@ interface ApiErrorBody {
 
 interface ClientOptions {
   fetchImpl?: typeof fetch;
+  /** undici dispatcher (e.g. an Agent with a custom CA) passed on every fetch. */
+  dispatcher?: unknown;
 }
 
 export class MoveitClient {
@@ -50,10 +52,13 @@ export class MoveitClient {
   private readonly tokenManager: TokenManager;
   private readonly fetchImpl: typeof fetch;
 
+  private readonly dispatcher: unknown;
+
   constructor(cfg: Config, tokenManager: TokenManager, opts?: ClientOptions) {
     this.baseUrl = cfg.baseUrl;
     this.tokenManager = tokenManager;
     this.fetchImpl = opts?.fetchImpl ?? fetch;
+    this.dispatcher = opts?.dispatcher;
   }
 
   async info(): Promise<unknown> {
@@ -151,11 +156,12 @@ export class MoveitClient {
       headers['Content-Type'] = 'application/json';
       body = JSON.stringify(jsonBody);
     }
-    const res = await this.fetchImpl(`${this.baseUrl}${path}`, {
-      method,
-      headers,
-      body,
-    });
+    const init: Record<string, unknown> = { method, headers, body };
+    if (this.dispatcher !== undefined) init.dispatcher = this.dispatcher;
+    const res = await this.fetchImpl(
+      `${this.baseUrl}${path}`,
+      init as RequestInit,
+    );
     if (res.status === 401 && retry) {
       this.tokenManager.invalidate();
       return this.request<T>(method, path, jsonBody, false);

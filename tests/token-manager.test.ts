@@ -223,3 +223,27 @@ describe('TokenManager', () => {
     ).not.toThrow();
   });
 });
+
+describe('dispatcher passthrough', () => {
+  it('passes the dispatcher on every fetch RequestInit', async () => {
+    const fetchMock = vi.fn(async (..._args: [unknown, RequestInit?]) =>
+      tokenResponse(),
+    );
+    const sentinel = { __sentinel: true };
+    const tm = new TokenManager(
+      baseConfig,
+      fetchMock as unknown as typeof fetch,
+      { dispatcher: sentinel },
+    );
+
+    await tm.getToken();
+    await tm.revoke();
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    for (const call of fetchMock.mock.calls) {
+      expect((call[1] as Record<string, unknown> | undefined)?.dispatcher).toBe(
+        sentinel,
+      );
+    }
+  });
+});

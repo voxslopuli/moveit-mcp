@@ -1,7 +1,8 @@
-import { realpathSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/server';
 import { StdioServerTransport } from '@modelcontextprotocol/server/stdio';
+import { Agent } from 'undici';
 import pkg from '../package.json' with { type: 'json' };
 import { MoveitClient } from './client.js';
 import { type Config, ConfigError, loadConfig } from './config.js';
@@ -35,9 +36,34 @@ export interface MoveitMcpServer {
   shutdown(): Promise<void>;
 }
 
-export function createServer(cfg: Config): MoveitMcpServer {
-  const tokenManager = new TokenManager(cfg);
-  const client = new MoveitClient(cfg, tokenManager);
+export interface ServerOptions {
+  /** Test injection: overrides the undici dispatcher built from cfg.caFile. */
+  dispatcher?: unknown;
+  /** Test injection: overrides global fetch. */
+  fetchImpl?: typeof fetch;
+}
+
+export function createServer(
+  cfg: Config,
+  opts?: ServerOptions,
+): MoveitMcpServer {
+  let dispatcher = opts?.dispatcher;
+  if (dispatcher === undefined && cfg.caFile !== undefined) {
+    let ca: string;
+    try {
+      ca = readFileSync(cfg.caFile, 'utf8');
+    } catch {
+      throw new ConfigError(
+        `MOVEIT_CA_FILE: cannot read CA bundle file at ${cfg.caFile}`,
+      );
+    }
+    dispatcher = new Agent({ connect: { ca } });
+  }
+  const tokenManager = new TokenManager(cfg, opts?.fetchImpl, { dispatcher });
+  const client = new MoveitClient(cfg, tokenManager, {
+    fetchImpl: opts?.fetchImpl,
+    dispatcher,
+  });
   const server = new McpServer({
     name: 'moveit-mcp',
     version: pkg.version,

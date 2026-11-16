@@ -101,3 +101,16 @@ it('keeps a /webadmin suffix on baseUrl', () => {
     loadConfig({ ...validEnv, MOVEIT_BASE_URL: 'https://host' }).baseUrl,
   ).toBe('https://host');
 });
+
+describe('MOVEIT_CA_FILE', () => {
+  it('sets caFile when MOVEIT_CA_FILE is present', () => {
+    expect(
+      loadConfig({ ...validEnv, MOVEIT_CA_FILE: '/etc/ssl/moveit-ca.pem' })
+        .caFile,
+    ).toBe('/etc/ssl/moveit-ca.pem');
+  });
+
+  it('leaves caFile undefined when MOVEIT_CA_FILE is absent', () => {
+    expect(loadConfig({ ...validEnv }).caFile).toBeUndefined();
+  });
+});

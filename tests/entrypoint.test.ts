@@ -184,3 +184,18 @@ describe('main', () => {
     );
   });
 });
+
+describe('createServer with MOVEIT_CA_FILE', () => {
+  it('throws ConfigError naming MOVEIT_CA_FILE when the CA file is missing', () => {
+    const missing = '/nonexistent/moveit-ca-bundle.pem';
+    expect(() => createServer({ ...validConfig, caFile: missing })).toThrow(
+      ConfigError,
+    );
+    expect(() => createServer({ ...validConfig, caFile: missing })).toThrow(
+      /MOVEIT_CA_FILE/,
+    );
+    expect(() => createServer({ ...validConfig, caFile: missing })).toThrow(
+      new RegExp(missing.replace(/[/.]/g, '\\$&')),
+    );
+  });
+});

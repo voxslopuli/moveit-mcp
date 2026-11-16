@@ -28,9 +28,22 @@ export class TokenManager {
   private refreshToken: string | null = null;
   private expiresAt = 0;
 
-  constructor(cfg: Config, fetchImpl: typeof fetch = fetch) {
+  private readonly dispatcher: unknown;
+
+  constructor(
+    cfg: Config,
+    fetchImpl: typeof fetch = fetch,
+    opts?: { dispatcher?: unknown },
+  ) {
     this.cfg = cfg;
     this.fetchImpl = fetchImpl;
+    this.dispatcher = opts?.dispatcher;
+  }
+
+  /** fetch init with the optional undici dispatcher merged in. */
+  private init(base: RequestInit): RequestInit {
+    if (this.dispatcher === undefined) return base;
+    return { ...base, dispatcher: this.dispatcher } as RequestInit;
   }
 
   async getToken(): Promise<string> {
@@ -58,11 +71,11 @@ export class TokenManager {
     const body = new URLSearchParams({ token: this.accessToken });
     const res = await this.fetchImpl(
       `${this.cfg.baseUrl}/api/v1/token/revoke`,
-      {
+      this.init({
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: body.toString(),
-      },
+      }),
     );
     if (!res.ok) {
       throw new Error(`Token revocation failed with status ${res.status}`);
@@ -93,11 +106,14 @@ export class TokenManager {
   }
 
   private async request(body: URLSearchParams): Promise<void> {
-    const res = await this.fetchImpl(`${this.cfg.baseUrl}/api/v1/token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body.toString(),
-    });
+    const res = await this.fetchImpl(
+      `${this.cfg.baseUrl}/api/v1/token`,
+      this.init({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      }),
+    );
     if (!res.ok) {
       await this.throwTokenError(res);
     }

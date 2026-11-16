@@ -544,3 +544,27 @@ describe('MoveitClient', () => {
     });
   });
 });
+
+describe('dispatcher passthrough', () => {
+  it('passes the dispatcher on every fetch RequestInit', async () => {
+    const calls: Array<{ url: string; init: RequestInit }> = [];
+    const fetchMock = vi.fn(async (url: unknown, init?: RequestInit) => {
+      calls.push({ url: String(url), init: init ?? {} });
+      return new Response(JSON.stringify({ version: '2023.0' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+    const stub = stubTokenManager(['tok1']);
+    const sentinel = { __sentinel: true };
+    const client = new MoveitClient(cfg, stub.tm as unknown as TokenManager, {
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      dispatcher: sentinel,
+    });
+    await client.info();
+    expect(calls).toHaveLength(1);
+    expect((calls[0].init as Record<string, unknown>).dispatcher).toBe(
+      sentinel,
+    );
+  });
+});

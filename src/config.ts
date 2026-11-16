@@ -5,6 +5,7 @@ export interface Config {
   username: string;
   password: string;
   serverHost?: string;
+  caFile?: string;
   tlsRejectUnauthorized: boolean;
 }
 
@@ -35,6 +36,7 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     username,
     password,
     serverHost: env.MOVEIT_SERVER_HOST,
+    caFile: env.MOVEIT_CA_FILE,
     tlsRejectUnauthorized: tlsRaw?.toLowerCase() !== 'false',
   };
 }
