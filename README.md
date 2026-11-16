@@ -61,9 +61,35 @@ Missing required variables fail startup with a list of what is missing.
 
 ## Client setup
 
-### Claude Desktop
+### OpenCode
 
-`claude_desktop_config.json`:
+Add the server to `~/.config/opencode/opencode.json` (global) or `.opencode/opencode.json` (project):
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "servers": {
+      "moveit-mcp": {
+        "type": "local",
+        "command": ["npx", "-y", "@voxslopuli/moveit-mcp"],
+        "environment": {
+          "MOVEIT_BASE_URL": "https://moveit.example.com/webadmin",
+          "MOVEIT_USERNAME": "svc-account",
+          "MOVEIT_PASSWORD": "changeme",
+          "MOVEIT_TLS_REJECT_UNAUTHORIZED": "true"
+        }
+      }
+    }
+  }
+}
+```
+
+Verify the connection with `opencode mcp list`. Set `"disabled": true` on a server to keep it configured without connecting.
+
+### Other clients
+
+`claude_desktop_config.json` (Claude Desktop):
 
 ```json
 {
@@ -82,9 +108,7 @@ Missing required variables fail startup with a list of what is missing.
 }
 ```
 
-### Generic MCP client
-
-Any client that supports `mcpServers`:
+Generic MCP client — any client that supports `mcpServers`:
 
 ```json
 {
